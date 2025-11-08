@@ -1,0 +1,35 @@
+name: frontend
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+        run:
+            working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'pnpm'
+
+      - name: Enable corepack (pnpmの利用準備)
+        run: corepack enable
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Biome check
+        run: pnpm exec biome check
+
+      - name: TypeScript type check 
+        run: pnpm exec tsc --noEmit
