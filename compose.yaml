@@ -1,0 +1,29 @@
+services:
+  localstack:
+    image: localstack/localstack:1.4
+    container_name: localstack
+    ports:
+      - "4566:4566" # LocalStack edge port (recommended)
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DEFAULT_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - logfo-s3:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:4566/health || exit 1" ]
+      interval: 5s
+      timeout: 2s
+      retries: 12
+
+networks:
+  default:
+    name: logfo_default
+
+volumes:
+  logfo-s3:
+    name: logfo-s3
