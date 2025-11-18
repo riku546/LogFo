@@ -33,5 +33,6 @@ lerna-debug.log*
 .DS_Store
 
 
-# sqllite
-*.sqlite
+# db関連
+dev.db
+/src/generated/prisma
