@@ -1,0 +1,41 @@
+
+
+name = "backend"
+main = "src/index.ts"
+compatibility_date = "2025-11-17"
+compatibility_flags = ["nodejs_compat"]
+
+# R2 Buckets (R2ストレージ)
+# [[r2_buckets]] は R2バケットの配列テーブルを示します
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "my-bucket"
+
+# D1 Databases (D1データベース)
+# [[d1_databases]] は D1データベースの配列テーブルを示します
+[[d1_databases]]
+binding = "DB"
+database_name = "logfo"
+database_id = "98b6626b-f090-46b9-8f03-8de7a5b96937"
+migrations_dir = "drizzle"
+
+
+
+
+# KV Namespaces (KVストレージ)
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Vars (環境変数)
+# [vars]
+# MY_VAR = "my-variable"
+
+# AI (AIバインディング)
+# [ai]
+# binding = "AI"
+
+# Observability (監視機能)
+# [observability]
+# enabled = true
+# head_sampling_rate = 1.0 # JSONでは整数ですが、TOMLでは浮動小数点数 (1) も可

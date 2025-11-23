@@ -43,5 +43,11 @@ jobs:
       - name: Biome check
         run: pnpm exec biome check
 
+      - name: copy env file
+        run: cp .env.example .env
+      
+      - name: wrangler type generation
+        run: pnpm exec wrangler types 
+
       - name: TypeScript type check 
         run: pnpm exec tsc --noEmit
