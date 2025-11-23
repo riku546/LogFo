@@ -50,7 +50,7 @@ jobs:
       - name: opnenext build
         run: pnpm exec opennextjs-cloudflare build
 
-      - name: Build & Deploy Worker
+      - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
