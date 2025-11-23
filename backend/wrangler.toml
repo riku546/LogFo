@@ -1,6 +1,6 @@
 
 
-name = "backend"
+name = "logfo-backend"
 main = "src/index.ts"
 compatibility_date = "2025-11-17"
 compatibility_flags = ["nodejs_compat"]
@@ -8,8 +8,8 @@ compatibility_flags = ["nodejs_compat"]
 # R2 Buckets (R2ストレージ)
 # [[r2_buckets]] は R2バケットの配列テーブルを示します
 [[r2_buckets]]
-binding = "MY_BUCKET"
-bucket_name = "my-bucket"
+binding = "R2"
+bucket_name = "logfo"
 
 # D1 Databases (D1データベース)
 # [[d1_databases]] は D1データベースの配列テーブルを示します

@@ -46,3 +46,13 @@ jobs:
 
       - name: TypeScript type check 
         run: pnpm exec tsc --noEmit
+
+      - name: opnenext build
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'frontend' 
