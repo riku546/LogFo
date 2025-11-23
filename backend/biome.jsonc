@@ -7,7 +7,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!wrangler.toml",
+      "!worker-configuration.d.ts"
+    ]
   },
   "formatter": {
     "enabled": true,
