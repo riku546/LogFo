@@ -2,24 +2,27 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { jwt, sign } from "hono/jwt";
 import { users } from "./db/schema";
-import { cors } from 'hono/cors'
-
 
 const app = new Hono<{ Bindings: Env }>();
 
-
-app.use(
-  '/auth/*',
-  cors({
-    origin: ['https://logfo.riku62560.workers.dev', 'http://localhost:3000'],
-    allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
-    exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+app.use("auth/*", async (c, next) => {
+  const corsMiddlewareHandler = cors({
+    origin: c.env.FRONTEND_ORIGIN,
+    allowHeaders: [
+      "X-Custom-Header",
+      "Upgrade-Insecure-Requests",
+      "Content-Type",
+      "Authorization",
+    ],
+    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
     maxAge: 600,
-  })
-)
+  });
+  return corsMiddlewareHandler(c, next);
+});
 
 app.use("/auth/*", (c, next) => {
   const jwtMiddleware = jwt({
@@ -28,10 +31,11 @@ app.use("/auth/*", (c, next) => {
   return jwtMiddleware(c, next);
 });
 
-app.get("/", (c) => {
+// ヘルスチェックエンドポイント
+app.get("/health", (c) => {
   return c.text("Hello Hono!");
 });
-
+// ヘルスチェックエンドポイント(unauthorizedが返される)
 app.get("/auth/health", (c) => {
   return c.json({ status: "ok" });
 });

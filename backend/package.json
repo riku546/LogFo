@@ -7,7 +7,8 @@
     "format": "biome format --write",
     "biome:fix": "biome check --write",
     "biome:check": "biome check",
-    "typecheck": "tsc --noEmit"
+    "generate-types": "wrangler types",
+    "typecheck": "pnpm generate-types && tsc --noEmit"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.0.4",
