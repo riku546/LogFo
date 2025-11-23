@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "biome:fix": "biome check --write"
+    "biome:fix": "biome check --write",
+    "biome:check": "biome check"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.13.1",
