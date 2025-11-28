@@ -1,28 +1,12 @@
 // test/integration.spec.js (または .ts)
-import { applyD1Migrations, env, SELF } from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { excuteMigrations } from "../lib";
 
 describe("Worker Integration Test", () => {
   // 2. beforeAll でマイグレーションを実行
   beforeAll(async () => {
-    // DrizzleのマイグレーションフォルダからSQLファイルを読み込む
-    // ※パスはテストファイルの位置に合わせて調整してください（例: ../../drizzle/*.sql）
-    const migrations = import.meta.glob("../../drizzle/*.sql", {
-      eager: true,
-      query: "?raw",
-      import: "default",
-    });
-
-    // 読み込んだファイルを applyD1Migrations が受け取れる形式に変換
-    const migrationEvents = Object.entries(migrations)
-      .sort(([pathA], [pathB]) => pathA.localeCompare(pathB)) // ファイル名順（0000_..., 0001_...）に並び替え
-      .map(([path, sql]) => ({
-        name: path.split("/").pop() ?? path, // ファイル名をマイグレーション名とする
-        queries: [sql as string], // SQLの中身
-      }));
-
-    // マイグレーションを適用
-    await applyD1Migrations(env.DB, migrationEvents);
+    await excuteMigrations();
   });
 
   describe("signup endpoint", () => {
