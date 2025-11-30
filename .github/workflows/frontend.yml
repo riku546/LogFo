@@ -44,6 +44,15 @@ jobs:
       - name: Biome check
         run: pnpm exec biome check
 
+      #モノレポなので、型チェックを通すために、backendの型も必要
+      - name: copy env file
+        run: cp .env.example .env
+        working-directory: backend
+      #モノレポなので、型チェックを通すために、backendの型も必要
+      - name: wrangler type generation
+        run: pnpm exec wrangler types 
+        working-directory: backend
+
       - name: TypeScript type check 
         run: pnpm exec tsc --noEmit
 
