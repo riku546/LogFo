@@ -10,7 +10,8 @@
     "format": "biome format --write",
     "biome:fix": "biome check --write",
     "biome:check": "biome check",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.13.1",
