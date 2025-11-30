@@ -1,4 +1,5 @@
 import { applyD1Migrations, env } from "cloudflare:test";
+import { sign } from "hono/utils/jwt/jwt";
 
 type GlobFn = (
   pattern: string,
@@ -25,4 +26,16 @@ export const excuteMigrations = async () => {
 
   // マイグレーションを適用
   await applyD1Migrations(env.DB, migrationEvents);
+};
+
+export const createAuthToken = async () => {
+  const payload = {
+    sub: "test-user-id",
+    role: "user",
+    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間後に期限切れ
+  };
+
+  const token = await sign(payload, env.JWT_SECRET);
+
+  return token;
 };

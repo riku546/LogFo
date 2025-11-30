@@ -97,10 +97,11 @@ app.post("/signin", async (c) => {
 
   // JWTペイロードの作成
   // exp (Expiration Time) を設定することで、verify時に有効期限チェックが行われます
+  const ONE_WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
   const payload = {
     sub: user.id,
     role: "user",
-    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間後に期限切れ
+    exp: Math.floor(Date.now() / 1000) + ONE_WEEK_IN_SECONDS, // 1週間後に期限切れ
   };
 
   // トークンの署名 (生成)
