@@ -32,15 +32,6 @@ const app = new Hono<{ Bindings: Env }>()
     return jwtMiddleware(c, next);
   })
 
-  // ヘルスチェックエンドポイント
-  .get("/health", (c) => {
-    return c.text("Hello Hono!");
-  })
-  // ヘルスチェックエンドポイント(unauthorizedが返される)
-  .get("/auth/health", (c) => {
-    return c.json({ status: "ok" });
-  })
-
   .post("/signup", zValidator("json", signupSchema), async (c) => {
     const { email, password, userName } = c.req.valid("json");
 
