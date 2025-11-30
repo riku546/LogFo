@@ -1,2 +1,2 @@
 .pnpm-store
-localstack
+node_modules/
