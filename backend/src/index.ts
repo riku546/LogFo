@@ -1,99 +1,144 @@
+import { zValidator } from "@hono/zod-validator";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception"; // HTTPExceptionをインポート
 import { jwt, sign } from "hono/jwt";
 import { users } from "./db/schema";
+import { buildErrorResponse } from "./lib/buildErrorResponse";
+import { signinSchema, signupSchema } from "./schema/auth";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>()
+  .onError((err, c) => {
+    if (err instanceof HTTPException) {
+      // HTTPExceptionの内容をJSONで返却し、形式を統一する
+      return buildErrorResponse(c, err.status ?? 500, err.message || "Error");
+    }
 
-app.use("/auth/*", (c, next) => {
-  const jwtMiddleware = jwt({
-    secret: c.env.JWT_SECRET,
-  });
-  return jwtMiddleware(c, next);
-});
+    // それ以外の予期せぬエラー（DB接続エラーやコードのバグなど）は500にする
+    console.error("System Error:", err);
+    return buildErrorResponse(c, 500, "Internal Server Error");
+  })
 
-app.get("/", (c) => {
-  return c.text("Hello Hono!");
-});
+  .use("*", async (c, next) => {
+    const corsMiddlewareHandler = cors({
+      origin: c.env.FRONTEND_ORIGIN,
+      allowHeaders: [
+        "X-Custom-Header",
+        "Upgrade-Insecure-Requests",
+        "Content-Type",
+        "Authorization",
+      ],
+      allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+      exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
+      maxAge: 600,
+    });
+    return corsMiddlewareHandler(c, next);
+  })
 
-app.get("/auth/health", (c) => {
-  return c.json({ status: "ok" });
-});
+  .use("/auth/*", (c, next) => {
+    const jwtMiddleware = jwt({
+      secret: c.env.JWT_SECRET,
+    });
+    return jwtMiddleware(c, next);
+  })
 
-app.post("/signup", async (c) => {
-  const { email, password, userName } = await c.req.json();
+  .post(
+    "/signup",
+    zValidator("json", signupSchema, (result, c) => {
+      if (!result.success) {
+        return buildErrorResponse(
+          c,
+          400,
+          "Validation Error",
+          result.error.issues.map((issue) => issue.message),
+        );
+      }
+    }),
+    async (c) => {
+      const { email, password, userName } = c.req.valid("json");
 
-  if (!email || !password || !userName) {
-    return c.json({ error: "Email, password, and username are required" }, 400);
-  }
+      const db = drizzle(c.env.DB);
 
-  const db = drizzle(c.env.DB);
+      // 重複チェック
+      const existingRows = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
 
-  // 重複チェック
-  const existingRows = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email));
+      if (existingRows.length) {
+        throw new HTTPException(409, { message: "Email already in use" }); // HTTPExceptionをスロー
+      }
 
-  if (existingRows.length) {
-    return c.json({ error: "Email already in use" }, 409);
-  }
+      const hashed = await bcrypt.hash(password, 10);
 
-  const hashed = await bcrypt.hash(password, 10);
+      await db
+        .insert(users)
+        .values({ email, password: hashed, name: userName })
+        .run();
 
-  // ここで動的 import — モジュール初期化によるトップレベル処理を避ける
-  //ファイルの上部でimportするとエラーになる
-  const { createId } = await import("@paralleldrive/cuid2");
-  const id = createId();
-
-  await db
-    .insert(users)
-    .values({ id, email, password: hashed, name: userName })
-    .run();
-
-  return c.json(
-    {
-      message: "User created successfully",
+      return c.json(
+        {
+          message: "User created successfully",
+        },
+        201,
+      );
     },
-    201,
+  )
+
+  /**
+   *  サインイン (Sign-in)
+   * 認証に成功したら sign() を使ってJWTを発行します。
+   */
+  .post(
+    "/signin",
+    zValidator("json", signinSchema, (result, c) => {
+      if (!result.success) {
+        return buildErrorResponse(
+          c,
+          400,
+          "Validation Error",
+          result.error.issues.map((issue) => issue.message),
+        );
+      }
+    }),
+    async (c) => {
+      const { email, password } = c.req.valid("json");
+      console.log(email, password);
+
+      const db = drizzle(c.env.DB);
+
+      // ユーザー検索とパスワード確認
+      const user = (
+        await db.select().from(users).where(eq(users.email, email))
+      )[0];
+
+      if (!user) {
+        throw new HTTPException(401, { message: "user not found" });
+      }
+
+      const verified = await bcrypt.compare(password, user.password);
+      if (!verified) {
+        throw new HTTPException(401, { message: "password is incorrect" });
+      }
+
+      // JWTペイロードの作成
+      // exp (Expiration Time) を設定することで、verify時に有効期限チェックが行われます
+      const ONE_WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+      const payload = {
+        sub: user.id,
+        role: "user",
+        exp: Math.floor(Date.now() / 1000) + ONE_WEEK_IN_SECONDS, // 1週間後に期限切れ
+      };
+
+      // トークンの署名 (生成)
+      const token = await sign(payload, c.env.JWT_SECRET);
+
+      return c.json({ token });
+    },
   );
-});
 
-/**
- *  サインイン (Sign-in)
- * 認証に成功したら sign() を使ってJWTを発行します。
- */
-app.post("/signin", async (c) => {
-  const { email, password } = await c.req.json();
-
-  const db = drizzle(c.env.DB);
-
-  // ユーザー検索とパスワード確認
-  const user = (await db.select().from(users).where(eq(users.email, email)))[0];
-
-  if (!user) {
-    return c.json({ error: "Invalid credentials" }, 401);
-  }
-
-  const verified = await bcrypt.compare(password, user.password);
-  if (!verified) {
-    return c.json({ error: "Invalid credentials" }, 401);
-  }
-
-  // JWTペイロードの作成
-  // exp (Expiration Time) を設定することで、verify時に有効期限チェックが行われます
-  const payload = {
-    sub: user.id,
-    role: "user",
-    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間後に期限切れ
-  };
-
-  // トークンの署名 (生成)
-  const token = await sign(payload, c.env.JWT_SECRET);
-
-  return c.json({ token });
-});
-
+export type AppType = typeof app;
 export default app;
