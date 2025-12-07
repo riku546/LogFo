@@ -1,21 +1,41 @@
-```txt
-npm install
-npm run dev
+# 開発環境構築手順
+
+## 前提条件
+- pnpmがインストールされている
+
+
+## 依存関係のインストール
+```bash
+pnpm install
 ```
 
-```txt
-npm run deploy
+
+## 環境変数 
+
+```bash
+cp .env.example .env
+```
+**環境変数は配布された物を使用してください。**
+
+
+## マイグレーション
+```bash
+ pnpm wrangler d1 migrations apply logfo --local
 ```
 
-[For generating/synchronizing types based on your Worker configuration run](https://developers.cloudflare.com/workers/wrangler/commands/#types):
+## 開発サーバーの起動
 
-```txt
-npm run cf-typegen
+```bash
+ pnpm dev
 ```
 
-Pass the `CloudflareBindings` as generics when instantiation `Hono`:
 
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
+# 便利なコマンド
+
+## ローカルDBのデータ確認する方法
+**--commandオプションにSQL文を指定して実行します。**
+
+```bash
+# 例: userテーブルの全データを取得する場合
+pnpm wrangler d1 execute logfo --local  --command "SELECT * FROM user;"
 ```
