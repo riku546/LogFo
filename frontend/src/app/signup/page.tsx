@@ -4,27 +4,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import useSWRMutation from "swr/mutation";
 import { client } from "@/lib/client";
+import { handleErrorResponse } from "@/lib/error";
 
 // SWR Mutation Fetcher
-async function signupFetcher(
+const signupFetcher = async (
   _key: string,
   { arg }: { arg: { email: string; password: string; userName: string } },
-) {
+) => {
   const res = await client.signup.$post({
     json: arg,
   });
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    // backend/src/index.ts では { error: string } を返している
-    if (errorData && typeof errorData === "object" && "error" in errorData) {
-      throw new Error((errorData as { error: string }).error);
-    }
-    throw new Error("Signup failed");
-  }
+  const data = await res.json();
 
-  return await res.json();
-}
+  if (!res.ok) {
+    handleErrorResponse(data);
+  }
+  return data;
+};
 
 export default function Page() {
   const router = useRouter();
@@ -93,7 +90,7 @@ export default function Page() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 border rounded text-black"
             required
-            minLength={8}
+            // minLength={8}
           />
         </div>
 

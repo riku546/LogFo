@@ -4,26 +4,25 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import useSWRMutation from "swr/mutation";
 import { client } from "@/lib/client";
+import { handleErrorResponse } from "@/lib/error";
 
 // SWR Mutation Fetcher
-async function signinFetcher(
+const signinFetcher = async (
   _key: string,
   { arg }: { arg: { email: string; password: string } },
-) {
+) => {
   const res = await client.signin.$post({
     json: arg,
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    const errorData = await res.json();
-    if (errorData && typeof errorData === "object" && "error" in errorData) {
-      throw new Error((errorData as { error: string }).error);
-    }
-    throw new Error("Signin failed");
+    handleErrorResponse(data);
   }
 
-  return await res.json();
-}
+  return data as { token: string };
+};
 
 export default function SigninPage() {
   const router = useRouter();
@@ -44,6 +43,7 @@ export default function SigninPage() {
 
       router.push("/");
     } catch (err) {
+      console.log(err);
       if (err instanceof Error) {
         setGeneralError(err.message);
       } else {

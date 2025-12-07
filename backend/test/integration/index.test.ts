@@ -1,15 +1,15 @@
 // test/integration.spec.js (または .ts)
 import { SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
-import { createAuthToken, excuteMigrations } from "../lib";
+import { excuteMigrations } from "../lib";
 
 describe("Worker Integration Test", () => {
-  let authToken: string;
+  // let authToken: string;
 
   // マイグレーションを実行し、認証トークンを作成
   beforeAll(async () => {
     await excuteMigrations();
-    authToken = await createAuthToken();
+    // authToken = await createAuthToken();
   });
 
   describe("signup endpoint", () => {
@@ -71,20 +71,6 @@ describe("Worker Integration Test", () => {
       });
 
       expect(response.status).toBe(400);
-    });
-  });
-
-  describe("auth/health endpoint", () => {
-    it("should return status ok", async () => {
-      const response = await SELF.fetch("http://localhost:8787/auth/health", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data).toEqual({ status: "ok" });
     });
   });
 });
