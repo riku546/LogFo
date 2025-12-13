@@ -1,19 +1,16 @@
-# dependabot.yml
+# groupsを使って、モノレポ全体の依存関係を一つのPRにまとめる
+# lockfile-directoriesを使って、ロックファイルがルートにあることを明示
 version: 2
 updates:
-  # npm/pnpm の依存関係を監視する設定
-  - package-ecosystem: "npm" 
-    directory: "frontend/" # package.json が存在するディレクトリを指定
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "daily"
     
-    reviewers:
-      - "riku546" 
+    groups:
+      monorepo-deps:
+        patterns:
+          - "*" 
 
-  - package-ecosystem: "npm" 
-    directory: "backend/" # package.json が存在するディレクトリを指定
-    schedule:
-      interval: "daily"
-    
-    reviewers:
-      - "riku546" 
+    lockfile-directories:
+      - "/" 
