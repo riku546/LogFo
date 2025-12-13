@@ -56,6 +56,9 @@ jobs:
       - name: TypeScript type check 
         run: pnpm exec tsc --noEmit
 
+      - name: Build
+        run: pnpm build
+
       - name: opnenext build
         run: pnpm exec opennextjs-cloudflare build
 
