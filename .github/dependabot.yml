@@ -1,0 +1,19 @@
+# dependabot.yml
+version: 2
+updates:
+  # npm/pnpm の依存関係を監視する設定
+  - package-ecosystem: "npm" 
+    directory: "frontend/" # package.json が存在するディレクトリを指定
+    schedule:
+      interval: "daily"
+    
+    reviewers:
+      - "riku546" 
+
+  - package-ecosystem: "npm" 
+    directory: "backend/" # package.json が存在するディレクトリを指定
+    schedule:
+      interval: "daily"
+    
+    reviewers:
+      - "riku546" 
