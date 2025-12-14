@@ -1,5 +1,4 @@
-# groupsを使って、モノレポ全体の依存関係を一つのPRにまとめる
-# lockfile-directoriesを使って、ロックファイルがルートにあることを明示
+# groupsを使って、モノレポ全体の依存関係更新を一つのPRにまとめる
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -12,5 +11,4 @@ updates:
         patterns:
           - "*" 
 
-    lockfile-directories:
-      - "/" 
+  
