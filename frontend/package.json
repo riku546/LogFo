@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.13.1",
+    "@opennextjs/cloudflare": "^1.14.8",
     "backend": "workspace:*",
     "hono": "^4.10.7",
     "next": "16.0.10",
