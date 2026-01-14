@@ -41,6 +41,7 @@ const app = new Hono<{ Bindings: Env }>()
   .use("/auth/*", (c, next) => {
     const jwtMiddleware = jwt({
       secret: c.env.JWT_SECRET,
+      alg: "ES384",
     });
     return jwtMiddleware(c, next);
   })
