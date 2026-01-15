@@ -1,17 +1,8 @@
 // test/integration.spec.js (または .ts)
 import { SELF } from "cloudflare:test";
-import { beforeAll, describe, expect, it } from "vitest";
-import { excuteMigrations } from "../lib";
+import { describe, expect, it } from "vitest";
 
 describe("Worker Integration Test", () => {
-  // let authToken: string;
-
-  // マイグレーションを実行し、認証トークンを作成
-  beforeAll(async () => {
-    await excuteMigrations();
-    // authToken = await createAuthToken();
-  });
-
   describe("signup endpoint", () => {
     it("正常にサインアップできる", async () => {
       // SELF.fetch を使用して Worker にリクエストを送信
