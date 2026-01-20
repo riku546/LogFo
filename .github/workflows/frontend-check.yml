@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'pnpm'
-          cache-dependency-path: './frontend/pnpm-lock.yaml'      
+          cache-dependency-path: 'pnpm-lock.yaml'      
 
       
       - name: Setup pnpm
