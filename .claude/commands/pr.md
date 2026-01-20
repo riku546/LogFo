@@ -52,18 +52,15 @@ git diff BASE_BRANCH...HEAD
 - PRのタイトルとして適切な簡潔な説明も提案してください
 - 変更内容は、差分の内容から重要な変更点を抽出して記述してください
 - コミットメッセージも参考にして、変更の意図を理解してください
-- 説明は日本語で記述してください
+- **説明は日本語で、Markdown形式で記述してください**
 - 軽微なファイル変更（package-lock.json、設定ファイルの自動生成など）は省略して構いません
 
 ## 3. 出力形式
 
 以下の形式でPR descriptionを出力してください：
 
-```markdown
-## PRタイトル案
-提案するタイトル
+- PRタイトル案
 
-## PR Description
+- PR Description
+`.github/pull_request_template.md`に従った形式で出力
 
-（ここに生成したdescriptionの全文を記載）
-```
