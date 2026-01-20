@@ -1,11 +1,10 @@
-name: backend
+name: backend-check
 
 on:
   pull_request:
-    branches: [ main ]
 
 jobs:
-  backend-ci:
+  check:
     runs-on: ubuntu-latest
 
     defaults:
@@ -48,7 +47,7 @@ jobs:
       
       - name: wrangler type generation
         run: pnpm exec wrangler types 
-
+      
       - name: TypeScript type check 
         run: pnpm exec tsc --noEmit
 
@@ -57,23 +56,3 @@ jobs:
 
       - name: Run integration tests
         run: pnpm test:integration
-
-      - name: Build & Deploy Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: 'backend' 
-          secrets: |
-            JWT_SECRET
-            CLOUDFLARE_ACCOUNT_ID
-            CLOUDFLARE_DATABASE_ID
-            CLOUDFLARE_D1_TOKEN
-            FRONTEND_ORIGIN
-
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
-          CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
-          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}

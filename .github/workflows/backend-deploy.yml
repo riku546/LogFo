@@ -1,0 +1,61 @@
+name: backend-deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+        run:
+            working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Cache pnpm store and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('backend/pnpm-lock.yaml') }}      
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with: 
+          version: latest
+
+      - name: Enable corepack (pnpmの利用準備)
+        run: corepack enable
+
+      - name: Install backend dependencies
+        run: pnpm install
+
+      - name: Build & Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'backend' 
+          secrets: |
+            JWT_SECRET
+            CLOUDFLARE_ACCOUNT_ID
+            CLOUDFLARE_DATABASE_ID
+            CLOUDFLARE_D1_TOKEN
+            FRONTEND_ORIGIN
+            
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
+          CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
