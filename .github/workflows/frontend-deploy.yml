@@ -41,6 +41,15 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      #モノレポなので、型チェックを通すために、backendの型も必要
+      - name: copy env file
+        run: cp .env.example .env
+        working-directory: backend
+      #モノレポなので、型チェックを通すために、backendの型も必要
+      - name: wrangler type generation
+        run: pnpm exec wrangler types 
+        working-directory: backend
+
       - name: opnenext build
         run: pnpm exec opennextjs-cloudflare build
 
