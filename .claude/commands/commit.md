@@ -1,5 +1,5 @@
 ---
-description: 静的チェックをして、conversion commitする
+description:　静的チェックとコミット
 ---
 
 ## 実行手順のまとめ
