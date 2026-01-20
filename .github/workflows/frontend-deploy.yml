@@ -16,18 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with: 
+          version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'      
-
-      
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with: 
-          version: latest
+          cache-dependency-path: 'pnpm-lock.yaml'
 
       - name: Enable corepack (pnpmの利用準備)
         run: corepack enable
