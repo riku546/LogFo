@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "ask": [
+      "Edit",
+      "Write"
+    ],
+    "allow": [
+      "Shell(git log*)",
+      "Shell(git diff*)",
+      "Shell(git status*)",
+      "Shell(git show*)",
+      "Shell(git branch*)",
+      "Shell(git remote*)",
+      "Shell(grep*)",
+      "Shell(rg*)",
+      "Shell(ls*)",
+      "Shell(find*)",
+      "Shell(cat*)",
+      "Shell(head*)",
+      "Shell(tail*)",
+      "Shell(wc*)",
+      "Shell(pwd*)",
+      "Shell(which*)",
+      "Shell(file*)",
+      "Shell(stat*)",
+      "Shell(date*)",
+      "Shell(whoami*)",
+      "Shell(pnpm biome:fix && pnpm typecheck*)"
+    ],
+    "deny": [
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(./secrets/**)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
+    ]
+  }
+}
