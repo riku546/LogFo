@@ -4,58 +4,22 @@
 
 ### I. 日本語によるドキュメンテーション (Japanese Documentation)
 
-プロジェクトの透明性と意思決定の正確性を確保するため、すべての製品仕様書（spec.md）、技術計画書（plan.md）、タスク（tasks.md）、および品質チェックリストは、常に日本語で記述され、最新の状態に維持されなければならない。
+プロジェクトの透明性と意思決定の正確性を確保するため、すべての製品仕様書（spec.md）、技術計画書（plan.md）、タスク（tasks.md）、**および実装時のあらゆる仕様書・設計書**は、常に日本語で記述されなければならない。
 
-### [PRINCIPLE_2_NAME]
+### II. SDD開発ルールとアーキテクチャの遵守 (SDD Rules Compliance)
 
-<!-- Example: II. Library-First -->
+仕様駆動開発（Spec Driven Development）の品質を担保するため、以下のルールセットを遵守すること。
 
-[PRINCIPLE_2_DESCRIPTION]
+- **共通ルール** ([docs/rules/general/](file:///Users/riku/Documents/LogFo/docs/rules/general/)): プロジェクトのすべての実装において遵守を義務付ける。
+- **Frontendルール** ([docs/rules/frontend/](file:///Users/riku/Documents/LogFo/docs/rules/frontend/)): フロントエンドの実装時のみ遵守し、App Routerの規約やHooksの設計指針に従う。
+- **Backendルール** ([docs/rules/backend/](file:///Users/riku/Documents/LogFo/docs/rules/backend/)): バックエンドの実装時のみ遵守し、HonoのRPC型定義やDrizzleのリレーション設計に従う。
 
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
 
-### [PRINCIPLE_3_NAME]
-
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-
-[PRINCIPLE_3_DESCRIPTION]
-
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
-
-### [PRINCIPLE_4_NAME]
-
-<!-- Example: IV. Integration Testing -->
-
-[PRINCIPLE_4_DESCRIPTION]
-
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
-
-### [PRINCIPLE_5_NAME]
-
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-
-[PRINCIPLE_5_DESCRIPTION]
-
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
-
-## [SECTION_2_NAME]
-
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-
-## [SECTION_3_NAME]
-
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
 
 ## Governance
 
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+- **憲法の優位性**: 本憲法はプロジェクトにおけるすべての慣行に優先する。
+- **ルールの役割**: `docs/rules/` 配下の各ルールファイルは、AIエージェントおよび人間が実装を行う際の「正誤」を判断する最終的な基準となる。ルールからの逸脱が必要な場合は、まずルール自体の更新または個別仕様書での正当化が必要である。
 
-[GOVERNANCE_RULES]
+**Version**: 1.0.0 | **Ratified**: 2026-01-20 | **Last Amended**: 2026-01-21
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-20 | **Last Amended**: 2026-01-20
-
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
