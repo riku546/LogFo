@@ -14,17 +14,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.15.0",
+    "@opennextjs/cloudflare": "^1.16.1",
     "backend": "workspace:*",
     "hono": "^4.11.7",
-    "next": "16.1.5",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "swr": "^2.3.8",
-    "zod": "^4.3.5"
+    "next": "16.1.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "swr": "^2.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
+    "@biomejs/biome": "2.3.13",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -32,11 +32,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.1",
-    "happy-dom": "^20.3.4",
+    "happy-dom": "^20.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite-tsconfig-paths": "^6.0.4",
-    "vitest": "^4.0.17",
-    "wrangler": "^4.59.3"
+    "vite-tsconfig-paths": "^6.0.5",
+    "vitest": "^4.0.18",
+    "wrangler": "^4.61.1"
   }
 }
