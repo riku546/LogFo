@@ -1,10 +1,16 @@
-import { text, integer, real, sqliteTable } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ---------------------------------------------
 // 0. 共通定義 (Enums)
 // ---------------------------------------------
-export const providerEnum = ["github", "wakatime", "qiita", "zenn", "atcoder"] as const;
+export const providerEnum = [
+  "github",
+  "wakatime",
+  "qiita",
+  "zenn",
+  "atcoder",
+] as const;
 export const statusEnum = ["TODO", "IN_PROGRESS", "DONE"] as const;
 
 // ---------------------------------------------
@@ -237,9 +243,7 @@ export const portfolios = sqliteTable("portfolios", {
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   slug: text("slug").notNull().unique(), // パブリックURL末尾 (logfo.app/[slug])
-  isPublic: integer("is_public", { mode: "boolean" })
-    .notNull()
-    .default(false),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
   settings: text("settings", { mode: "json" }), // どのサマリ・ウィジェットを表示するかのJSON設定
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
