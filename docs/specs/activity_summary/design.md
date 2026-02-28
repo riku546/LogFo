@@ -8,7 +8,7 @@
 
 - **`SummaryGeneratorPage`**: メインの管理画面。生成された過去のサマリー一覧と新規生成機能を持つ。
 - **`components/SummaryConfigPanel`**:
-  生成するためのコンテキスト設定エリア。対象期間（例:「過去半年」や「特定のロードマップID」）を選択するドロップダウンコンポーネント。
+  生成するためのコンテキスト設定エリア。対象の「マイルストーン」を選択するドロップダウンコンポーネント。ここから取得する期間（マイルストーンの開始・終了）を決める。
 - **`components/SummaryChatStream`**:
   ロードマップ生成時と同様の、ストリーミングでプレビュー表示部分にテキストが徐々に出力されるUI。Vercel AI SDK の `useCompletion` などを使用。
 - **`components/SummaryEditor`**:
@@ -29,7 +29,7 @@
 
 - **エンドポイント:** `POST /api/summary/generate`
 - **処理フロー:**
-  1.  リクエストに含まれる検索条件（ロードマップIDや対象期間）をもとに、Drizzle ORM で `activity_logs` と `external_activities`（該当期間のサマリー等）を取得する。
+  1.  リクエストされた `milestoneId` をもとに、Drizzle ORM で紐づくタスクの `activity_logs` を取得する。さらに、これらログの初回〜最終日時に対応する `external_activities`（該当期間のソースコード活動等）を取得する。
   2.  取得した複数レコードを加工し、テキスト上の情報としてフォーマットする（例: `[2024-03-01: GitHub 5 Commits, WakaTime 2hrs, Log: React Hooksについて学習]`）。
   3.  フォーマットした活動コンテキストをシステムプロンプトに結合し、「この活動記録をもとに、『どのような壁にぶつかり、どう解決し成長したか』という一貫したストーリーを含む自己PR文・振り返りレポートを作成せよ」と指定。
   4.  Vercel AI SDK と OpenRouter経由の `@openrouter/glm-4.5-air` で `streamText` の出力をフロントエンドへSSEで返却する。
