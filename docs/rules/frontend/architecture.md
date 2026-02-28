@@ -1,48 +1,48 @@
-# Frontend Architecture
+# LogFo フロントエンド全体設計書 (Frontend Architecture & Design)
 
-## ディレクトリ構造 (Directory Structure)
+## 1. 基本方針と技術スタック
 
-Next.js App Router (src/app) をベースに、機能単位(feature-based)の構成を採用します。
+フロントエンドは、UXの高さ（SPAに近いシームレスな体験）とSEO・パフォーマンスの両立を目指し、以下の技術スタックを採用します。
+また、Vercel 等のエッジ・サーバーレス環境ではなく、最終的には Cloudflare Pages へのデプロイを前提とした設定を行います。
 
-```
+- **コアフレームワーク:** Next.js (App Router) / React
+- **スタイリング:** Tailwind CSS
+- **状態管理 & データフェッチ:**
+  - サーバー状態 (API・Hono通信): Hono RPC
+  - クライアント状態 (UIの開閉や編集状態など): useState
+- **LLM UI/ストリーミング:** Vercel AI SDK (`ai` および `@ai-sdk/react`)
+- **コンポーネント管理:** Radix UI / shadcn/ui などをベースにしたアクセシブルなコンポーネント（想定）
+- **Markdown / エディタ:** `react-markdown` や TipTapベースのリッチエディタ（Activity Tracking用）
+
+## 2. アーキテクチャ構成とディレクトリ設計
+
+本プロジェクトでは、優れたUI/UXの実現に開発リソースを集中させつつ、テスト容易性を担保するため **「軽量 Feature-Driven 構成 (Feature-Based Architecture)」** を採用しています。
+選定のプロセス（なぜ厳密なFSD等ではなく、この手法を選んだのか）については以下のADRを参照してください。
+
+- **詳細な選定理由（ADR）:** [フロントエンドアーキテクチャへの軽量 Feature-Driven 構成の採用](../../decision/frontend_architecture.md)
+
+### ディレクトリ構成図
+
+Next.js のルーティング機能（`app`）と、実際のビジネスロジック・コンポーネント群（`features`）を明確に分離します。
+
+```text
 src/
-├── app/                 # App Router (Pages, Layouts, Route Handlers)
-│   ├── (public)/        # 認証不要ページ
-│   ├── (protected)/     # 認証必要ページ
-│   ├── api/             # Next.js Route Handlers (BFF layer)
-│   └── layout.tsx       # Root Layout
-├── components/          # 汎用コンポーネント (UI Library)
-│   ├── ui/              # ボタン、入力フォームなどの最小単位 (Atomic)
-│   └── layouts/         # ヘッダー、フッターなどの枠組み
-├── features/            # 機能単位のモジュール
-│   ├── [feature-name]/  # 例: auth, rooms, logs
-│   │   ├── components/  # 機能固有のUIコンポーネント
-│   │   ├── hooks/       # 機能固有のロジック
-│   │   ├── types/       # 機能固有の型定義
-│   │   └── utils/       # 機能固有のユーティリティ
-│   └── index.ts         # 公開APIの定義 (Barrel file)
-├── lib/                 # 外部ライブラリのラッパー、設定
-│   ├── api-client.ts    # Hono RPC Client設定
-│   └── ...
-└── utils/               # プロジェクト全体のユーティリティ
+├── app/                  # Next.js App Router (ルーティング定義、ページレイアウト)
+├── components/           # プロジェクト全体で使い回す汎用UIコンポーネント (Button, Input, Layout等)
+├── features/             # 🌟 各機能ドメイン（軽量Feature-Drivenのコア）
+│   ├── roadmap/          # [Step1] ロードマップ生成機能
+│   │   ├── components/   # ロードマップ専用のUIコンポーネント
+│   │   ├── hooks/        # ロードマップドメインのローカルStateやロジック
+│   │   └── api/          # 該当機能のHono RPC呼び出し処理
+│   ├── activities/       # [Step2] 活動記録・ダッシュボード
+│   ├── summary/          # [Step3] AIサマリー生成
+│   └── portfolio/        # [Step4] ポートフォリオ生成
+├── hooks/                # 汎用カスタムフック (APIコール等以外、画面幅検知など)
+├── lib/                  # 汎用ユーティリティ (Hono/APIクライアントの設定、utils等)
+└── types/                # グローバルな型定義
 ```
 
-## アーキテクチャ原則 (Principles)
+## 3. エラーハンドリングとタイムアウト対策
 
-1.  **Colocation (関連するものを近くに置く)**:
-    - 特定の機能でしか使わないコンポーネントやHooksは、`src/components` や `src/hooks` ではなく、`src/features/[feature]/` 配下に置きます。
-    - これにより、機能の削除やリファクタリングが容易になります。
-
-2.  **BFF (Backend For Frontend)**:
-    - `src/app/api` は、フロントエンドが必要とするデータを整形して返すBFF層として機能させます。
-    - 複雑なビジネスロジックはBackend (Hono) に委譲し、ここではデータのマッピングやセッション管理などの「つなぎ」の処理を行います。
-
-3.  **Strict Boundary**:
-    - `features` 間での直接参照は極力避け、必要な場合は上位コンポーネント(Page)を通じて連携させるか、共通部分として切り出します。
-
-## テクノロジー選定 (Technology Stack)
-
-- **Framework**: Next.js (App Router)
-- **Styling**: Tailwind CSS (Utility-first)
-- **Data Fetching**: Hono RPC (Type-safe API client) or Server Actions
-- **Validation**: Zod (Schema validation)
+- Cloudflare Workers側のAPIが制限時間内にレスポンスを返せなかったり（外部APIの遅延等）、OpenRouterの呼び出しでエラーが発生した場合に備え、`react-toastify` や `sonner` を利用してユーザーフレンドリーなエラー通知（トースト）を表示します。
+- LLM実行中の離脱を防ぐため、ストリーミング中は「ページ離脱時の警告ダイアログ (beforeunload)」を設定します。

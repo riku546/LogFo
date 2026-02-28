@@ -77,7 +77,7 @@ const app = new Hono<{ Bindings: Env }>()
 
       await db
         .insert(users)
-        .values({ email, password: hashed, name: userName })
+        .values({ email, passwordHash: hashed, name: userName })
         .run();
 
       return c.json(
@@ -120,7 +120,7 @@ const app = new Hono<{ Bindings: Env }>()
         throw new HTTPException(401, { message: "user not found" });
       }
 
-      const verified = await bcrypt.compare(password, user.password);
+      const verified = await bcrypt.compare(password, user.passwordHash);
       if (!verified) {
         throw new HTTPException(401, { message: "password is incorrect" });
       }

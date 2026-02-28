@@ -1,37 +1,71 @@
-# Backend Architecture
+# LogFo バックエンド全体設計書 (Backend Architecture & Design)
 
-## アーキテクチャ概要 (Architecture Overview)
+## 1. 基本方針と技術スタック
 
-Hono をベースにした Web API サーバーです。Cloudflare Workers での動作を前提とした軽量で高速な構成を目指します。
+バックエンドは、エッジ対応かつ型安全で高速な環境を実現するため、Cloudflare Workers 上に構築される API サーバー（BFF層）を前提としています。
 
+- **バックエンドフレームワーク:** Hono
+- **ランタイム環境:** Cloudflare Workers (または Pages Functions)
+- **データベース & ORM:**
+  - データベース: Cloudflare D1 (分散型SQLite)
+  - ORM: Drizzle ORM (Edge環境へ最適化、TypeScriptでの高い型安全性)
+- **認証:** (Hono側でのセッション/JWT管理)
+- **LLM連携 SDK:** Vercel AI SDK Core (`@ai-sdk/core`)
+- **モデル・プロバイダ:** OpenRouter API経由の `glm-4.5-air` (Web検索込み)
+
+## 2. システム制約（Cloudflare Workers）と対策全体方針
+
+Cloudflare Workers には実行時間（CPUタイム最大30秒など）の厳格な制限があるため、以下の全体方針で設計します。
+各機能ごとの詳細なタイムアウト対策・設計については、それぞれの機能設計書（`docs/specs/機能名/design.md`）を参照してください。
+
+- **AI/LLMストリーミング生成への対応:** Honoのエンドポイント内でVercel AI SDKの `streamText` や `streamObject` を使用し、ストリーミング（SSE）として即座にレスポンスを返すアーキテクチャを採用することで、サーバーのタイムアウトエラーを防ぎます。
+- **外部データ同期の運用:** 複数外部APIからデータを重く引っ張るバッチ処理（Cron）は、初手では採用せず、ユーザーのボタン押下などによるオンデマンド取得を基本とします。
+
+## 3. アーキテクチャ構成
+
+本プロジェクトではバックエンドの設計において **「オニオンアーキテクチャ (Onion Architecture)」** を採用しています。
+選定の背景や比較検討のプロセス（なぜプロトタイプフェーズでありながらオニオンを選択したのか）については、以下のADRを参照してください。
+
+- **詳細な選定理由（ADR）:** [バックエンドアーキテクチャへのオニオンアーキテクチャの採用](../../decision/backend_architecture.md)
+
+## 4. ディレクトリ構成 (オニオンアーキテクチャ)
+
+上記の設計思想に基づいて、中心（ドメイン）から外側（インフラ・UI）へ依存が向かう構成を採用します。
+
+```text
+src/
+├── index.ts                      # アプリケーションのエントリーポイント
+├── core/                         # 🌟 中心（ドメイン）。外部ライブラリ・DBに絶対依存しない
+│   ├── domain/
+│   │   └── models/               # Zodスキーマや純粋な型定義（エンティティ）
+│   └── application/
+│       ├── usecases/             # ビジネスロジック。Serviceに相当
+│       └── interfaces/           # DB実体に依存しないRepository等のインターフェース
+│
+├── infrastructure/               # 🍎 最外層（インフラ）。具体技術に依存
+│   ├── database/                 # Dizzleのスキーマ・クライアント設定 (D1)
+│   └── repositories/             # interfacesを満たす具体的なDrizzle実装
+│
+└── presentation/                 # 🍎 最外層（UI/通信）。Honoのルーティング
+    └── routes/                   # 各エンドポイントの定義とDI（依存性の注入）
 ```
-backend/src/
-├── index.ts             # アプリケーションのエントリーポイント
-├── db/                  # データベース関連
-│   ├── schema.ts        # Drizzle テーブル定義
-│   └── index.ts         # DB接続設定
-├── routes/              # ルート定義 (Controller層)
-│   ├── [resource]/      # リソースごとのルート定義
-│   │   ├── [resource].ts        # Hono app instance for resource
-│   │   ├── [resource].test.ts   # テスト
-│   │   └── schema.ts    # Zodスキーマ
-│   └── index.ts         # ルートの集約
-├── services/            # ビジネスロジック (Service層 - オプション)
-│   └── ...
-├── middlewares/         # カスタムミドルウェア
-│   └── auth.ts          # 認証など
-└── utils/               # ユーティリティ
-```
 
-## Drizzle ORM の利用方針
+## 5. データモデル (Drizzle ORM / Cloudflare D1)
 
-- **Schema Definition**: DBスキーマの変更は必ず `drizzle-kit` のマイグレーションフローを通します。
-- **Querying**:
-  - 基本的には `db.select().from()...` のようなQuery Builder形式、または `db.query.users.findMany(...)` のようなRelational Query形式を使用します。
-  - 複雑なSQLが必要な場合は、生のSQLを書く前にQuery Builderで表現できないか検討します。
+各機能を満たすためのDBスキーマの全体像です。これらは `infrastructure/database/schema.ts` で定義されます。
 
-## エラーハンドリング (Error Handling)
-
-- Honoの `onError` を使用して、アプリケーション全体のエラーを一元管理します。
-- 予期せぬエラーは 500 Internal Server Error とし、ログを出力します。
-- クライアント起因のエラー(バリデーションエラーなど)は、適切なステータスコード(400, 404など)とエラーメッセージを返します。
+- **`users` テーブル** （ID, 氏名, プロフィール設定, 登録日）
+- **`user_integrations` テーブル** （WakaTime用トークン, GitHubのユーザー名など、外部データ連携設定用）
+- **ロードマップ管理テーブル**
+  - **`roadmaps` テーブル** （ユーザーID, 現状, 目標, 全体サマリ, PDF抽出テキスト）
+  - **`milestones` テーブル** （ロードマップID, タイトル, 順序）
+  - **`tasks` テーブル** （マイルストーンID, タスクの内容, 予想時間, ステータス[TODO, IN_PROGRESS, DONE]）
+- **`activity_logs` テーブル**
+  - （タスクIDへの外部キー、活動内容/Markdownテキスト、リンクURL、作成日時）
+- **`external_activities` テーブル (同期バッファ)**
+  - ダッシュボードの草（ヒートマップ）を描画するためにキャッシュしておくテーブル。
+  - （ユーザーID、ソース[github/wakatime/zenn]、日付、活動量[時間やコミット数]、JSON詳細）
+- **`summaries` テーブル**
+  - LLMで要約・作成済みの自己PRや活動サマリーのテキスト情報。
+- **`portfolios` テーブル**
+  - サマリーや表示したいウィジェット（外部データ）の設定、パブリックリンクとなるSlug文字列。
