@@ -15,4 +15,4 @@ export const createOpenRouterProvider = (apiKey: string) => {
 /**
  * ロードマップ生成に使用するモデルID
  */
-export const ROADMAP_MODEL_ID = "zhipuai/glm-4-air" as const;
+export const ROADMAP_MODEL_ID = "arcee-ai/trinity-large-preview:free" as const;

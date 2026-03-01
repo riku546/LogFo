@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { Output, streamText } from "ai";
+import { generateObject } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -100,16 +100,17 @@ export const createRoadmapRoutes = () => {
         // OpenRouterプロバイダー設定
         const openrouter = createOpenRouterProvider(c.env.OPENROUTER_API_KEY);
 
-        // ストリーミング構造化出力を生成
-        const result = streamText({
+        // 構造化出力を生成（JSONを確実に出力させる）
+        const result = await generateObject({
           model: openrouter(ROADMAP_MODEL_ID),
-          output: Output.object({ schema: roadmapGenerationSchema }),
+          schema: roadmapGenerationSchema,
           system: systemPrompt,
           prompt:
             "上記の情報をもとに、具体的な学習ロードマップを作成してください。",
         });
 
-        return result.toTextStreamResponse();
+        // 直接JSONオブジェクトとして返す
+        return c.json(result.object);
       })
 
       // ===== ロードマップ保存 =====

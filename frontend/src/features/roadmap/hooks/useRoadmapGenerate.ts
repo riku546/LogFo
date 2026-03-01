@@ -132,8 +132,7 @@ export const useRoadmapGenerate = () => {
         );
 
         const response = await generateRoadmap(token, requestBody, pdfFile);
-        const text = await response.text();
-        const parsed = JSON.parse(text) as RoadmapGeneration;
+        const parsed = (await response.json()) as RoadmapGeneration;
         setGeneratedRoadmap(parsed);
         toast.success("ロードマップを生成しました！");
       } catch (error) {
