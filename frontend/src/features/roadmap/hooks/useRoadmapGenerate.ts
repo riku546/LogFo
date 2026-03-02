@@ -205,18 +205,15 @@ export const useRoadmapGenerate = () => {
         pdfContext: null,
         summary: generatedRoadmap.summary,
         milestones: generatedRoadmap.milestones.map(
-          // biome-ignore lint/suspicious/noExplicitAny: useObjectのPartial型により安全な推論が難しいため
-          (milestone: any, milestoneIndex: number) => ({
+          (milestone, milestoneIndex) => ({
             title: milestone?.title || "",
             description: milestone?.description || "",
             orderIndex: milestoneIndex,
-            tasks: ((milestone?.tasks || []) as any[]).map(
-              (task: any, taskIndex: number) => ({
-                title: task?.title || "",
-                estimatedHours: task?.estimatedHours || 0,
-                orderIndex: taskIndex,
-              }),
-            ),
+            tasks: (milestone?.tasks || []).map((task, taskIndex) => ({
+              title: task?.title || "",
+              estimatedHours: task?.estimatedHours || 0,
+              orderIndex: taskIndex,
+            })),
           }),
         ),
       });
