@@ -1,9 +1,9 @@
 import path from "node:path";
-import { defineConfig } from "vitest/config";
 import {
   defineWorkersProject,
   readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig(async () => {
   // drizzleディレクトリ内のマイグレーションを読み込む
