@@ -218,12 +218,16 @@ export const deleteRoadmap = async (
 export const generateRoadmap = async (
   token: string,
   requestData: Record<string, unknown>,
-  pdfFile?: File | null,
+  userPdfFile?: File | null,
+  companyPdfFile?: File | null,
 ): Promise<Response> => {
   const formData = new FormData();
   formData.append("data", JSON.stringify(requestData));
-  if (pdfFile) {
-    formData.append("pdfFile", pdfFile);
+  if (userPdfFile) {
+    formData.append("userPdfFile", userPdfFile);
+  }
+  if (companyPdfFile) {
+    formData.append("companyPdfFile", companyPdfFile);
   }
 
   const response = await fetch(`${API_URL}/api/roadmap/generate`, {

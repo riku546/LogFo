@@ -4,12 +4,14 @@ import type { GenerateRoadmapRequest } from "../../../schema/roadmap";
  * ロードマップ生成用のシステムプロンプトを構築します。
  *
  * @param input - ユーザーが入力したスキル・目標情報
- * @param pdfText - PDFから抽出したテキスト（任意）
+ * @param userPdfText - ユーザーの履歴書・経歴PDFから抽出したテキスト（任意）
+ * @param companyPdfText - 志望企業の資料PDFから抽出したテキスト（任意）
  * @returns LLMに渡すシステムプロンプト文字列
  */
 export const buildRoadmapSystemPrompt = (
   input: GenerateRoadmapRequest,
-  pdfText?: string,
+  userPdfText?: string,
+  companyPdfText?: string,
 ): string => {
   const contextSections: string[] = [];
 
@@ -32,12 +34,20 @@ export const buildRoadmapSystemPrompt = (
 - 習得したい技術・資格: ${input.targetSkills || "特になし"}
 - 目標達成までの希望期間: ${input.targetPeriodMonths}ヶ月`);
 
-  // PDFコンテキスト（存在する場合）
-  if (pdfText) {
-    contextSections.push(`## 添付資料から抽出した情報
-以下はユーザーがアップロードした履歴書や企業資料から抽出したテキストです。ロードマップ作成の参考にしてください。
+  // ユーザーの履歴書・経歴PDFコンテキスト（存在する場合）
+  if (userPdfText) {
+    contextSections.push(`## ユーザーの履歴書・経歴から抽出した情報
+以下はユーザーがアップロードした履歴書や職務経歴書から抽出したテキストです。ユーザーの現在のスキルや経験を把握する参考にしてください。
 
-${pdfText}`);
+${userPdfText}`);
+  }
+
+  // 企業資料PDFコンテキスト（存在する場合）
+  if (companyPdfText) {
+    contextSections.push(`## 志望企業の資料から抽出した情報
+以下はユーザーがアップロードした志望企業の会社説明資料や採用情報から抽出したテキストです。企業が求めるスキルや人物像を把握する参考にしてください。
+
+${companyPdfText}`);
   }
 
   return `あなたはプロのキャリアメンター兼シニアエンジニアです。

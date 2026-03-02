@@ -58,7 +58,8 @@ export const useRoadmapGenerate = () => {
   const [targetPosition, setTargetPosition] = useState("");
   const [targetSkills, setTargetSkills] = useState("");
   const [targetPeriodMonths, setTargetPeriodMonths] = useState(6);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [userPdfFile, setUserPdfFile] = useState<File | null>(null);
+  const [companyPdfFile, setCompanyPdfFile] = useState<File | null>(null);
 
   // 生成結果
   const [generatedRoadmap, setGeneratedRoadmap] =
@@ -76,16 +77,34 @@ export const useRoadmapGenerate = () => {
     return token;
   }, [router]);
 
-  // PDF Dropzone
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  // ユーザーPDF Dropzone
+  const onUserPdfDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles[0]) {
-      setPdfFile(acceptedFiles[0]);
-      toast.success("PDFをアップロードしました");
+      setUserPdfFile(acceptedFiles[0]);
+      toast.success("自分の資料をアップロードしました");
     }
   }, []);
 
-  const dropzone = useDropzone({
-    onDrop,
+  const userDropzone = useDropzone({
+    onDrop: onUserPdfDrop,
+    accept: { "application/pdf": [".pdf"] },
+    maxFiles: 1,
+    maxSize: 10 * 1024 * 1024, // 10MB
+    onDropRejected: () => {
+      toast.error("PDF(10MB以下)のみアップロード可能です");
+    },
+  });
+
+  // 企業PDF Dropzone
+  const onCompanyPdfDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) {
+      setCompanyPdfFile(acceptedFiles[0]);
+      toast.success("企業の資料をアップロードしました");
+    }
+  }, []);
+
+  const companyDropzone = useDropzone({
+    onDrop: onCompanyPdfDrop,
     accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
     maxSize: 10 * 1024 * 1024, // 10MB
@@ -131,7 +150,12 @@ export const useRoadmapGenerate = () => {
           targetPeriodMonths,
         );
 
-        const response = await generateRoadmap(token, requestBody, pdfFile);
+        const response = await generateRoadmap(
+          token,
+          requestBody,
+          userPdfFile,
+          companyPdfFile,
+        );
         const parsed = (await response.json()) as RoadmapGeneration;
         setGeneratedRoadmap(parsed);
         toast.success("ロードマップを生成しました！");
@@ -151,7 +175,8 @@ export const useRoadmapGenerate = () => {
       targetPosition,
       targetSkills,
       targetPeriodMonths,
-      pdfFile,
+      userPdfFile,
+      companyPdfFile,
       getToken,
     ],
   );
@@ -224,7 +249,8 @@ export const useRoadmapGenerate = () => {
     setTargetSkills,
     targetPeriodMonths,
     setTargetPeriodMonths,
-    pdfFile,
+    userPdfFile,
+    companyPdfFile,
     // 生成結果
     generatedRoadmap,
     isGenerating,
@@ -235,6 +261,7 @@ export const useRoadmapGenerate = () => {
     handleSave,
     resetResult,
     // Dropzone
-    dropzone,
+    userDropzone,
+    companyDropzone,
   };
 };

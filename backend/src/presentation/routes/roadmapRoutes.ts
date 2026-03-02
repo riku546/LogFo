@@ -84,16 +84,28 @@ export const createRoadmapRoutes = () => {
         }
         const input = parseResult.data;
 
-        // PDF抽出（存在する場合）
-        let pdfText: string | undefined;
-        const pdfFile = formData.get("pdfFile");
-        if (pdfFile && pdfFile instanceof File) {
-          const buffer = await pdfFile.arrayBuffer();
-          pdfText = await extractPdfText(buffer);
+        // ユーザーPDF抽出（存在する場合）
+        let userPdfText: string | undefined;
+        const userPdfFile = formData.get("userPdfFile");
+        if (userPdfFile && userPdfFile instanceof File) {
+          const buffer = await userPdfFile.arrayBuffer();
+          userPdfText = await extractPdfText(buffer);
+        }
+
+        // 企業PDF抽出（存在する場合）
+        let companyPdfText: string | undefined;
+        const companyPdfFile = formData.get("companyPdfFile");
+        if (companyPdfFile && companyPdfFile instanceof File) {
+          const buffer = await companyPdfFile.arrayBuffer();
+          companyPdfText = await extractPdfText(buffer);
         }
 
         // プロンプト構築
-        const systemPrompt = buildRoadmapSystemPrompt(input, pdfText);
+        const systemPrompt = buildRoadmapSystemPrompt(
+          input,
+          userPdfText,
+          companyPdfText,
+        );
 
         // LLMプロバイダーとモデルの設定取得
         const { model } = getRoadmapLLM(c.env);
