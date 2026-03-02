@@ -46,6 +46,7 @@ jobs:
             CLOUDFLARE_DATABASE_ID
             CLOUDFLARE_D1_TOKEN
             FRONTEND_ORIGIN
+            OPENROUTER_API_KEY
             
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -53,3 +54,4 @@ jobs:
           CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
           CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
           FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
