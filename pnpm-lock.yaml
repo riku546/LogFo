@@ -45,6 +45,9 @@ importers:
       pdfjs-serverless:
         specifier: ^1.1.0
         version: 1.1.0
+      workers-ai-provider:
+        specifier: ^3.1.2
+        version: 3.1.2(@ai-sdk/provider@3.0.8)(ai@6.0.105(zod@4.3.5))
       zod:
         specifier: ^4.3.5
         version: 4.3.5
@@ -3448,6 +3451,12 @@ packages:
     resolution: {integrity: sha512-tVdBes3qkZKm9ntrgSDlvKzk4g2mcMp4bNM1+UgZMpTesb0x7e59vYYcKclbSNypmVkdLWpEc2TOpO0WF/rrZw==}
     engines: {node: '>=16'}
     hasBin: true
+
+  workers-ai-provider@3.1.2:
+    resolution: {integrity: sha512-ZXCWZIWk9rmjVKo0rUmbLQrRXdKWViAdqyV/cdqNQYT7FlSwITyZfZG/9CaInKKRDQQdBNvdPyB2+LWIz1E8Bw==}
+    peerDependencies:
+      '@ai-sdk/provider': ^3.0.0
+      ai: ^6.0.0
 
   wrangler@4.59.3:
     resolution: {integrity: sha512-zl+nqoGzWJ4K+NEMjy4GiaIi9ix59FkOzd7UsDb8CQADwy3li1DSNAzHty/BWYa3ZvMxr/G4pogMBb5vcSrNvQ==}
@@ -7146,6 +7155,11 @@ snapshots:
       '@cloudflare/workerd-linux-64': 1.20260116.0
       '@cloudflare/workerd-linux-arm64': 1.20260116.0
       '@cloudflare/workerd-windows-64': 1.20260116.0
+
+  workers-ai-provider@3.1.2(@ai-sdk/provider@3.0.8)(ai@6.0.105(zod@4.3.5)):
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      ai: 6.0.105(zod@4.3.5)
 
   wrangler@4.59.3:
     dependencies:

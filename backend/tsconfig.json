@@ -10,6 +10,6 @@
     "jsxImportSource": "hono/jsx",
     "types": ["./worker-configuration.d.ts", "node"]
   },
-  //backendディレクトリーからの型チェックを成功させるためにtest/env.d.tsを含める
-  "include": ["test/env.d.ts"]
+  //backendディレクトリーからの型チェックを成功させるためにsrcとtest/env.d.tsを含める
+  "include": ["src", "test/env.d.ts"]
 }

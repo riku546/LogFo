@@ -1,3 +1,4 @@
+/// <reference path="../../../worker-configuration.d.ts" />
 import { zValidator } from "@hono/zod-validator";
 import { generateObject } from "ai";
 import { drizzle } from "drizzle-orm/d1";
@@ -11,10 +12,7 @@ import {
 } from "../../core/application/usecases/getRoadmapUsecase";
 import { SaveRoadmapUsecase } from "../../core/application/usecases/saveRoadmapUsecase";
 import { UpdateRoadmapUsecase } from "../../core/application/usecases/updateRoadmapUsecase";
-import {
-  createOpenRouterProvider,
-  ROADMAP_MODEL_ID,
-} from "../../infrastructure/ai/openRouterProvider";
+import { getRoadmapLLM } from "../../infrastructure/ai/llmProvider";
 import { buildRoadmapSystemPrompt } from "../../infrastructure/ai/prompts/roadmapSystemPrompt";
 import { extractPdfText } from "../../infrastructure/pdf/pdfParser";
 import { DrizzleRoadmapRepository } from "../../infrastructure/repositories/drizzleRoadmapRepository";
@@ -97,18 +95,17 @@ export const createRoadmapRoutes = () => {
         // プロンプト構築
         const systemPrompt = buildRoadmapSystemPrompt(input, pdfText);
 
-        // OpenRouterプロバイダー設定
-        const openrouter = createOpenRouterProvider(c.env.OPENROUTER_API_KEY);
+        // LLMプロバイダーとモデルの設定取得
+        const { model } = getRoadmapLLM(c.env);
 
         // 構造化出力を生成（JSONを確実に出力させる）
         const result = await generateObject({
-          model: openrouter(ROADMAP_MODEL_ID),
+          model,
           schema: roadmapGenerationSchema,
           system: systemPrompt,
           prompt:
             "上記の情報をもとに、具体的な学習ロードマップを作成してください。",
         });
-
         // 直接JSONオブジェクトとして返す
         return c.json(result.object);
       })
