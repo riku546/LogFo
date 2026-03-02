@@ -27,6 +27,7 @@ const createDefaultProps = (
       },
     ],
   },
+  isGenerating: false,
   isSaving: false,
   onSave: vi.fn(),
   onReset: vi.fn(),

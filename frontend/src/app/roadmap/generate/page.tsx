@@ -399,9 +399,10 @@ export default function RoadmapGeneratePage() {
           </p>
         </div>
 
-        {/* 生成済みロードマップがあれば表示 */}
+        {/* 生成済み（または生成中）のロードマップがあれば表示 */}
         {generatedRoadmap ? (
           <RoadmapResult
+            isGenerating={isGenerating}
             generatedRoadmap={generatedRoadmap}
             isSaving={isSaving}
             onSave={handleSave}

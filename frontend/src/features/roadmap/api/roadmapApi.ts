@@ -213,14 +213,26 @@ export const deleteRoadmap = async (
 };
 
 /**
- * ロードマップを生成する（ストリーミング）
+ * ロードマップを生成する（ストリーミング・通常共通のリクエスト構築）
+ * `useObject` にカスタムの `fetch` 関数として渡すためのもの。
  */
-export const generateRoadmap = async (
-  token: string,
-  requestData: Record<string, unknown>,
-  userPdfFile?: File | null,
-  companyPdfFile?: File | null,
+export const roadmapGenerateFetch = async (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  options?: {
+    token: string;
+    requestData: Record<string, unknown>;
+    userPdfFile: File | null;
+    companyPdfFile: File | null;
+  },
 ): Promise<Response> => {
+  if (!options) {
+    // 通常のfetchとしてフォールバック
+    return fetch(input, init);
+  }
+
+  const { token, requestData, userPdfFile, companyPdfFile } = options;
+
   const formData = new FormData();
   formData.append("data", JSON.stringify(requestData));
   if (userPdfFile) {
@@ -234,6 +246,7 @@ export const generateRoadmap = async (
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
+      // FormDataを送信する場合はContent-Typeヘッダーをブラウザに設定させるため、あえて指定しません
     },
     body: formData,
   });
@@ -246,4 +259,21 @@ export const generateRoadmap = async (
   }
 
   return response;
+};
+
+/**
+ * 非ストリーミングでの旧API関数（後方互換 または テスト用）
+ */
+export const generateRoadmap = async (
+  token: string,
+  requestData: Record<string, unknown>,
+  userPdfFile?: File | null,
+  companyPdfFile?: File | null,
+): Promise<Response> => {
+  return roadmapGenerateFetch(`${API_URL}/api/roadmap/generate`, undefined, {
+    token,
+    requestData,
+    userPdfFile: userPdfFile || null,
+    companyPdfFile: companyPdfFile || null,
+  });
 };

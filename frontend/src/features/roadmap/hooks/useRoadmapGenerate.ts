@@ -1,12 +1,11 @@
-"use client";
-
+import { experimental_useObject as useObject } from "@ai-sdk/react";
 import type { GenerateRoadmapRequest } from "backend/src/schema/roadmap";
-import type { RoadmapGeneration } from "backend/src/schema/roadmapGeneration";
+import { roadmapGenerationSchema } from "backend/src/schema/roadmapGeneration";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { generateRoadmap, saveRoadmap } from "../api/roadmapApi";
+import { roadmapGenerateFetch, saveRoadmap } from "../api/roadmapApi";
 
 /** エラーメッセージの抽出ヘルパー */
 const getErrorMessage = (error: unknown, defaultMessage: string) =>
@@ -36,15 +35,7 @@ const buildGenerateRequest = (
 });
 
 /**
- * ロードマップ生成フォームの状態管理と生成・保存ロジックを管理するカスタムフック
- *
- * Usage:
- * const {
- *   formState, setFormState,
- *   generatedRoadmap, isGenerating, isSaving,
- *   handleGenerate, handleSave, resetResult,
- *   dropzone
- * } = useRoadmapGenerate();
+ * ロードマップ生成フォームの状態管理と生成（ストリーミング）・保存ロジックを管理するカスタムフック
  */
 export const useRoadmapGenerate = () => {
   const router = useRouter();
@@ -61,10 +52,7 @@ export const useRoadmapGenerate = () => {
   const [userPdfFile, setUserPdfFile] = useState<File | null>(null);
   const [companyPdfFile, setCompanyPdfFile] = useState<File | null>(null);
 
-  // 生成結果
-  const [generatedRoadmap, setGeneratedRoadmap] =
-    useState<RoadmapGeneration | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  // 保存中ステータス
   const [isSaving, setIsSaving] = useState(false);
 
   // トークン取得ヘルパー
@@ -76,6 +64,39 @@ export const useRoadmapGenerate = () => {
     }
     return token;
   }, [router]);
+
+  // Vercel AI SDK useObject
+  const {
+    submit,
+    object: generatedRoadmap,
+    stop,
+    isLoading,
+  } = useObject({
+    api: "/api/roadmap/generate", // 実際の送信先は fetch 関数内で上書き・構築される
+    schema: roadmapGenerationSchema,
+    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+      const token = getToken();
+      if (!token) throw new Error("Unauthorized");
+
+      // requestパラメータからリクエストデータをパースするワークアラウンド
+      // （useObjectのsubmitに渡した引数は本文JSONとしてinit.bodyに入るため）
+      const requestData = JSON.parse(init?.body as string);
+
+      return roadmapGenerateFetch(input, init, {
+        token,
+        requestData,
+        userPdfFile,
+        companyPdfFile,
+      });
+    },
+    onFinish: () => {
+      toast.success("ロードマップを生成しました！");
+    },
+    onError: (error: Error) => {
+      console.error(error);
+      toast.error(getErrorMessage(error, "生成中にエラーが発生しました"));
+    },
+  });
 
   // ユーザーPDF Dropzone
   const onUserPdfDrop = useCallback((acceptedFiles: File[]) => {
@@ -122,9 +143,9 @@ export const useRoadmapGenerate = () => {
     );
   }, []);
 
-  // ロードマップ生成
+  // ロードマップ生成ハンドラ
   const handleGenerate = useCallback(
-    async (event: React.FormEvent) => {
+    (event: React.FormEvent) => {
       event.preventDefault();
 
       if (currentSkills.length === 0) {
@@ -132,39 +153,21 @@ export const useRoadmapGenerate = () => {
         return;
       }
 
-      const token = getToken();
-      if (!token) return;
+      if (!getToken()) return;
 
-      setIsGenerating(true);
-      setGeneratedRoadmap(null);
+      const requestBody = buildGenerateRequest(
+        currentOccupation,
+        currentSkills,
+        otherSkills,
+        dailyStudyHours,
+        targetCompanies,
+        targetPosition,
+        targetSkills,
+        targetPeriodMonths,
+      );
 
-      try {
-        const requestBody = buildGenerateRequest(
-          currentOccupation,
-          currentSkills,
-          otherSkills,
-          dailyStudyHours,
-          targetCompanies,
-          targetPosition,
-          targetSkills,
-          targetPeriodMonths,
-        );
-
-        const response = await generateRoadmap(
-          token,
-          requestBody,
-          userPdfFile,
-          companyPdfFile,
-        );
-        const parsed = (await response.json()) as RoadmapGeneration;
-        setGeneratedRoadmap(parsed);
-        toast.success("ロードマップを生成しました！");
-      } catch (error) {
-        console.error(error);
-        toast.error(getErrorMessage(error, "生成中にエラーが発生しました"));
-      } finally {
-        setIsGenerating(false);
-      }
+      // useObject の submit にリクエストデータを渡す
+      submit(requestBody);
     },
     [
       currentOccupation,
@@ -175,15 +178,21 @@ export const useRoadmapGenerate = () => {
       targetPosition,
       targetSkills,
       targetPeriodMonths,
-      userPdfFile,
-      companyPdfFile,
+      submit,
       getToken,
     ],
   );
 
   // ロードマップ保存
   const handleSave = useCallback(async () => {
-    if (!generatedRoadmap) return;
+    // 生成完了の確認（ストリーミング中は保存できないようにする）
+    if (!generatedRoadmap || isLoading) {
+      toast.error("ロードマップの生成が完了していません");
+      return;
+    }
+
+    // 型ガード的に必須プロパティをチェック
+    if (!(generatedRoadmap.summary && generatedRoadmap.milestones)) return;
 
     const token = getToken();
     if (!token) return;
@@ -196,15 +205,18 @@ export const useRoadmapGenerate = () => {
         pdfContext: null,
         summary: generatedRoadmap.summary,
         milestones: generatedRoadmap.milestones.map(
-          (milestone, milestoneIndex) => ({
-            title: milestone.title,
-            description: milestone.description,
+          // biome-ignore lint/suspicious/noExplicitAny: useObjectのPartial型により安全な推論が難しいため
+          (milestone: any, milestoneIndex: number) => ({
+            title: milestone?.title || "",
+            description: milestone?.description || "",
             orderIndex: milestoneIndex,
-            tasks: milestone.tasks.map((task, taskIndex) => ({
-              title: task.title,
-              estimatedHours: task.estimatedHours,
-              orderIndex: taskIndex,
-            })),
+            tasks: ((milestone?.tasks || []) as any[]).map(
+              (task: any, taskIndex: number) => ({
+                title: task?.title || "",
+                estimatedHours: task?.estimatedHours || 0,
+                orderIndex: taskIndex,
+              }),
+            ),
           }),
         ),
       });
@@ -219,6 +231,7 @@ export const useRoadmapGenerate = () => {
     }
   }, [
     generatedRoadmap,
+    isLoading,
     getToken,
     currentOccupation,
     currentSkills,
@@ -227,9 +240,11 @@ export const useRoadmapGenerate = () => {
     router,
   ]);
 
-  // 結果をリセット
+  // FIXME: useObjectには生成結果をクリアする純正機能がないためダミー
+  // 必要に応じて formState のリセットなどで代替する
   const resetResult = useCallback(() => {
-    setGeneratedRoadmap(null);
+    // 現状は画面リロードなどで対応するか、再生成を促す
+    window.location.reload();
   }, []);
 
   return {
@@ -251,15 +266,16 @@ export const useRoadmapGenerate = () => {
     setTargetPeriodMonths,
     userPdfFile,
     companyPdfFile,
-    // 生成結果
+    // 生成結果と状態
     generatedRoadmap,
-    isGenerating,
+    isGenerating: isLoading,
     isSaving,
     // アクション
     toggleSkill,
     handleGenerate,
     handleSave,
     resetResult,
+    stopGeneration: stop,
     // Dropzone
     userDropzone,
     companyDropzone,

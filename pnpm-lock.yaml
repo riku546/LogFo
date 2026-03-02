@@ -94,6 +94,9 @@ importers:
       '@opennextjs/cloudflare':
         specifier: ^1.17.1
         version: 1.17.1(next@16.1.5(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(wrangler@4.59.3)
+      ai:
+        specifier: ^6.0.105
+        version: 6.0.105(zod@4.3.5)
       backend:
         specifier: workspace:*
         version: link:../backend

@@ -1,6 +1,6 @@
 /// <reference path="../../../worker-configuration.d.ts" />
 import { zValidator } from "@hono/zod-validator";
-import { generateObject } from "ai";
+import { streamObject } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -110,16 +110,30 @@ export const createRoadmapRoutes = () => {
         // LLMプロバイダーとモデルの設定取得
         const { model } = getRoadmapLLM(c.env);
 
-        // 構造化出力を生成（JSONを確実に出力させる）
-        const result = await generateObject({
+        // 構造化出力をストリーミングで生成
+        const result = await streamObject({
           model,
           schema: roadmapGenerationSchema,
           system: systemPrompt,
           prompt:
             "上記の情報をもとに、具体的な学習ロードマップを作成してください。",
         });
-        // 直接JSONオブジェクトとして返す
-        return c.json(result.object);
+
+        // Vercel AI SDKが生成する標準のストリーミングレスポンス
+        const streamResponse = result.toTextStreamResponse();
+
+        // Cloudflare Workers + Hono 環境でのバッファリングを防ぐための追加ヘッダーを設定
+        // 参考: https://github.com/honojs/hono/issues/1865 等
+        for (const [key, value] of streamResponse.headers.entries()) {
+          c.header(key, value);
+        }
+        c.header("X-Vercel-AI-Data-Stream", "v1");
+        c.header("Content-Encoding", "identity");
+
+        // Honoのc.bodyは型定義が厳しいため、streamとして扱う
+        return new Response(streamResponse.body, {
+          headers: c.res.headers,
+        });
       })
 
       // ===== ロードマップ保存 =====
