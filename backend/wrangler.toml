@@ -32,8 +32,8 @@ migrations_dir = "drizzle"
 # MY_VAR = "my-variable"
 
 # AI (AIバインディング)
-# [ai]
-# binding = "AI"
+[ai]
+binding = "AI"
 
 # Observability (監視機能)
 # [observability]
