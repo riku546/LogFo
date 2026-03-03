@@ -35,7 +35,7 @@ export default defineConfig(async () => {
                 },
                 miniflare: {
                   // マイグレーションをセットアップファイルで適用できるようにバインディングを追加
-                  bindings: { TEST_MIGRATIONS: migrations },
+                  bindings: { TEST_MIGRATIONS: migrations, AI: {} },
                 },
               },
             },
