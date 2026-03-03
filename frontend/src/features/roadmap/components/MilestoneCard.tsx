@@ -114,11 +114,31 @@ const TaskDisplayView = ({
     >
       {task.title}
     </span>
-    {task.estimatedHours && (
-      <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-        {task.estimatedHours}h
-      </span>
-    )}
+    <div className="flex items-center gap-2">
+      {task.estimatedHours && (
+        <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+          {task.estimatedHours}h
+        </span>
+      )}
+      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white border border-slate-200 text-slate-400 opacity-40 transition-all group-hover:opacity-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 shadow-sm">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <title>記録する</title>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      </div>
+    </div>
   </>
 );
 
@@ -150,7 +170,7 @@ const TaskListItem = ({
   onTaskClick?: MilestoneCardProps["onTaskClick"];
 }) => (
   <li
-    className={`flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/50 ${!isEditing && onTaskClick ? "cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" : ""}`}
+    className={`group flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/50 ${!isEditing && onTaskClick ? "cursor-pointer transition-all hover:bg-blue-50/50 hover:shadow-sm dark:hover:bg-blue-900/10" : ""}`}
     onClick={() => !isEditing && onTaskClick && onTaskClick(task)}
     onKeyDown={(event) =>
       event.key === "Enter" && !isEditing && onTaskClick && onTaskClick(task)
