@@ -91,9 +91,24 @@ describe("MilestoneCard", () => {
 
       expect(screen.queryByText("+ タスクを追加")).not.toBeInTheDocument();
     });
+
+    it("各タスクに記録アイコンが表示される", () => {
+      const props = createDefaultProps();
+      render(React.createElement(MilestoneCard, props));
+
+      const recordIcons = screen.getAllByTitle("記録する");
+      expect(recordIcons.length).toBe(2); // 2つのタスクがあるため
+    });
   });
 
   describe("編集モード", () => {
+    it("記録アイコンが表示されない", () => {
+      const props = createDefaultProps({ isEditing: true });
+      render(React.createElement(MilestoneCard, props));
+
+      expect(screen.queryByTitle("記録する")).not.toBeInTheDocument();
+    });
+
     it("タスク追加ボタンが表示される", () => {
       const props = createDefaultProps({ isEditing: true });
       render(React.createElement(MilestoneCard, props));

@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { jwt } from "hono/jwt";
 import { buildErrorResponse } from "./lib/buildErrorResponse";
+import { createActivityRoutes } from "./presentation/routes/activityRoutes";
 import { createAuthRoutes } from "./presentation/routes/authRoutes";
 import { createRoadmapRoutes } from "./presentation/routes/roadmapRoutes";
 
@@ -46,7 +47,8 @@ const app = new Hono<{ Bindings: Env }>()
   .route("/", createAuthRoutes())
 
   // 保護されたルート（JWT認証必須）
-  .route("/api/roadmap", createRoadmapRoutes());
+  .route("/api/roadmap", createRoadmapRoutes())
+  .route("/api", createActivityRoutes());
 
 export type AppType = typeof app;
 export default app;

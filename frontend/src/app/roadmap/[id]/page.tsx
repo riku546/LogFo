@@ -1,6 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+import { ActivityDrawer } from "@/features/activity/components/ActivityDrawer";
 import { MilestoneCard } from "@/features/roadmap/components/MilestoneCard";
 import { ProgressBar } from "@/features/roadmap/components/ProgressBar";
 import { useRoadmapDetail } from "@/features/roadmap/hooks/useRoadmapDetail";
@@ -26,6 +28,26 @@ export default function RoadmapDetailPage() {
     handleSave,
     handleDelete,
   } = useRoadmapDetail(roadmapId);
+
+  // ActivityDrawerの状態管理
+  const [selectedTask, setSelectedTask] = useState<{
+    id?: string;
+    title: string;
+    status: string;
+  } | null>(null);
+
+  const handleTaskClick = useCallback(
+    (task: { id?: string; title: string; status: string }) => {
+      if (!isEditing) {
+        setSelectedTask(task);
+      }
+    },
+    [isEditing],
+  );
+
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedTask(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -153,9 +175,18 @@ export default function RoadmapDetailPage() {
               onChangeTaskTitle={changeTaskTitle}
               onRemoveTask={removeTask}
               onAddTask={addTask}
+              onTaskClick={handleTaskClick}
             />
           ))}
         </div>
+
+        {/* 活動記録ドロワー */}
+        <ActivityDrawer
+          isOpen={selectedTask !== null}
+          taskId={selectedTask?.id ?? null}
+          taskTitle={selectedTask?.title ?? ""}
+          onClose={handleCloseDrawer}
+        />
       </div>
     </div>
   );
