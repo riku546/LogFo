@@ -31,7 +31,96 @@ export interface MilestoneCardProps {
   ) => void;
   onRemoveTask: (milestoneIndex: number, taskIndex: number) => void;
   onAddTask: (milestoneIndex: number) => void;
+  onTaskClick?: (task: { id?: string; title: string; status: string }) => void;
 }
+
+/**
+ * タスクアイテムの編集UI
+ */
+const TaskEditingView = ({
+  task,
+  taskIndex,
+  milestoneIndex,
+  onChangeTaskStatus,
+  onChangeTaskTitle,
+  onRemoveTask,
+}: {
+  task: { title: string; status: string };
+  taskIndex: number;
+  milestoneIndex: number;
+  onChangeTaskStatus: MilestoneCardProps["onChangeTaskStatus"];
+  onChangeTaskTitle: MilestoneCardProps["onChangeTaskTitle"];
+  onRemoveTask: MilestoneCardProps["onRemoveTask"];
+}) => (
+  <>
+    <select
+      value={task.status}
+      onChange={(event) =>
+        onChangeTaskStatus(
+          milestoneIndex,
+          taskIndex,
+          event.target.value as "TODO" | "IN_PROGRESS" | "DONE",
+        )
+      }
+      className="cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-700"
+    >
+      <option value="TODO">未着手</option>
+      <option value="IN_PROGRESS">進行中</option>
+      <option value="DONE">完了</option>
+    </select>
+    <input
+      type="text"
+      value={task.title}
+      onChange={(event) =>
+        onChangeTaskTitle(milestoneIndex, taskIndex, event.target.value)
+      }
+      className="flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+    />
+    <button
+      type="button"
+      onClick={() => onRemoveTask(milestoneIndex, taskIndex)}
+      className="cursor-pointer text-red-400 hover:text-red-600"
+      aria-label={`タスク「${task.title}」を削除`}
+    >
+      ✕
+    </button>
+  </>
+);
+
+/**
+ * タスクアイテムの表示UI
+ */
+const TaskDisplayView = ({
+  task,
+}: {
+  task: { title: string; status: string; estimatedHours?: number | null };
+}) => (
+  <>
+    <span
+      className={`h-5 w-5 shrink-0 rounded ${
+        task.status === "DONE"
+          ? "bg-green-500"
+          : task.status === "IN_PROGRESS"
+            ? "bg-amber-400"
+            : "border-2 border-slate-300 dark:border-slate-600"
+      }`}
+    />
+    <span
+      className={`flex-1 text-sm ${
+        task.status === "DONE"
+          ? "text-slate-400 line-through"
+          : "text-slate-700 dark:text-slate-300"
+      }`}
+    >
+      {task.title}
+    </span>
+    {task.estimatedHours && (
+      <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+        {task.estimatedHours}h
+      </span>
+    )}
+  </>
+);
 
 /**
  * タスクアイテムのコンポーネント
@@ -44,6 +133,7 @@ const TaskListItem = ({
   onChangeTaskStatus,
   onChangeTaskTitle,
   onRemoveTask,
+  onTaskClick,
 }: {
   task: {
     id?: string;
@@ -57,68 +147,28 @@ const TaskListItem = ({
   onChangeTaskStatus: MilestoneCardProps["onChangeTaskStatus"];
   onChangeTaskTitle: MilestoneCardProps["onChangeTaskTitle"];
   onRemoveTask: MilestoneCardProps["onRemoveTask"];
+  onTaskClick?: MilestoneCardProps["onTaskClick"];
 }) => (
-  <li className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/50">
+  <li
+    className={`flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/50 ${!isEditing && onTaskClick ? "cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800" : ""}`}
+    onClick={() => !isEditing && onTaskClick && onTaskClick(task)}
+    onKeyDown={(event) =>
+      event.key === "Enter" && !isEditing && onTaskClick && onTaskClick(task)
+    }
+    role={!isEditing && onTaskClick ? "button" : undefined}
+    tabIndex={!isEditing && onTaskClick ? 0 : undefined}
+  >
     {isEditing ? (
-      <>
-        <select
-          value={task.status}
-          onChange={(event) =>
-            onChangeTaskStatus(
-              milestoneIndex,
-              taskIndex,
-              event.target.value as "TODO" | "IN_PROGRESS" | "DONE",
-            )
-          }
-          className="cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-700"
-        >
-          <option value="TODO">未着手</option>
-          <option value="IN_PROGRESS">進行中</option>
-          <option value="DONE">完了</option>
-        </select>
-        <input
-          type="text"
-          value={task.title}
-          onChange={(event) =>
-            onChangeTaskTitle(milestoneIndex, taskIndex, event.target.value)
-          }
-          className="flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-        />
-        <button
-          type="button"
-          onClick={() => onRemoveTask(milestoneIndex, taskIndex)}
-          className="cursor-pointer text-red-400 hover:text-red-600"
-          aria-label={`タスク「${task.title}」を削除`}
-        >
-          ✕
-        </button>
-      </>
+      <TaskEditingView
+        task={task}
+        taskIndex={taskIndex}
+        milestoneIndex={milestoneIndex}
+        onChangeTaskStatus={onChangeTaskStatus}
+        onChangeTaskTitle={onChangeTaskTitle}
+        onRemoveTask={onRemoveTask}
+      />
     ) : (
-      <>
-        <span
-          className={`h-5 w-5 shrink-0 rounded ${
-            task.status === "DONE"
-              ? "bg-green-500"
-              : task.status === "IN_PROGRESS"
-                ? "bg-amber-400"
-                : "border-2 border-slate-300 dark:border-slate-600"
-          }`}
-        />
-        <span
-          className={`flex-1 text-sm ${
-            task.status === "DONE"
-              ? "text-slate-400 line-through"
-              : "text-slate-700 dark:text-slate-300"
-          }`}
-        >
-          {task.title}
-        </span>
-        {task.estimatedHours && (
-          <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            {task.estimatedHours}h
-          </span>
-        )}
-      </>
+      <TaskDisplayView task={task} />
     )}
   </li>
 );
@@ -135,6 +185,7 @@ export const MilestoneCard = ({
   onChangeTaskTitle,
   onRemoveTask,
   onAddTask,
+  onTaskClick,
 }: MilestoneCardProps) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
@@ -169,6 +220,7 @@ export const MilestoneCard = ({
             onChangeTaskStatus={onChangeTaskStatus}
             onChangeTaskTitle={onChangeTaskTitle}
             onRemoveTask={onRemoveTask}
+            onTaskClick={onTaskClick}
           />
         ))}
       </ul>
