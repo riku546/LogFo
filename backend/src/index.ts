@@ -4,7 +4,9 @@ import { HTTPException } from "hono/http-exception";
 import { jwt } from "hono/jwt";
 import { buildErrorResponse } from "./lib/buildErrorResponse";
 import { createActivityRoutes } from "./presentation/routes/activityRoutes";
+import { createAuthIntegrationRoutes } from "./presentation/routes/authIntegrationRoutes";
 import { createAuthRoutes } from "./presentation/routes/authRoutes";
+import { createDashboardRoutes } from "./presentation/routes/dashboardRoutes";
 import { createRoadmapRoutes } from "./presentation/routes/roadmapRoutes";
 
 const app = new Hono<{ Bindings: Env }>()
@@ -47,8 +49,30 @@ const app = new Hono<{ Bindings: Env }>()
   .route("/", createAuthRoutes())
 
   // 保護されたルート（JWT認証必須）
+  .route("/api/auth", createAuthIntegrationRoutes())
   .route("/api/roadmap", createRoadmapRoutes())
+  .route("/api", createDashboardRoutes())
   .route("/api", createActivityRoutes());
 
 export type AppType = typeof app;
-export default app;
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event: any, env: Env, ctx: any) {
+    console.log("Cron triggered:", event.cron);
+    // モック実装：将来的には全ユーザーの userIntegrations を取得してループで syncExternalDataUsecase を呼び出す
+    /*
+    const { drizzle } = await import("drizzle-orm/d1");
+    const { DrizzleExternalActivityRepository } = await import("./infrastructure/repositories/drizzleExternalActivityRepository");
+    const { DrizzleUserIntegrationRepository } = await import("./infrastructure/repositories/drizzleUserIntegrationRepository");
+    const { SyncExternalDataUsecase } = await import("./core/application/usecases/syncExternalDataUsecase");
+
+    const db = drizzle(env.DB);
+    const usecase = new SyncExternalDataUsecase(
+      new DrizzleExternalActivityRepository(db),
+      new DrizzleUserIntegrationRepository(db)
+    );
+    // ...各ユーザーとプロバイダに対して同期処理を実行...
+    */
+  },
+};
