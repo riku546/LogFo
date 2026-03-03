@@ -10,33 +10,8 @@ export interface ActivityDrawerProps {
   isOpen: boolean;
   taskId: string | null;
   taskTitle: string;
-  taskStatus: "TODO" | "IN_PROGRESS" | "DONE";
   onClose: () => void;
-  onStatusChange?: (
-    taskId: string,
-    status: "TODO" | "IN_PROGRESS" | "DONE",
-  ) => void;
 }
-
-const STATUS_OPTIONS = [
-  {
-    value: "TODO",
-    label: "未着手",
-    color: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  },
-  {
-    value: "IN_PROGRESS",
-    label: "進行中",
-    color:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-  },
-  {
-    value: "DONE",
-    label: "完了",
-    color:
-      "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
-  },
-] as const;
 
 /**
  * ロードマップ画面からタスクをクリックした際に右からスライドして表示されるドロワー
@@ -46,9 +21,7 @@ export const ActivityDrawer = ({
   isOpen,
   taskId,
   taskTitle,
-  taskStatus,
   onClose,
-  onStatusChange,
 }: ActivityDrawerProps) => {
   const { activityLogs, isLoading, handleCreate, handleUpdate, handleDelete } =
     useActivityTimeline(isOpen ? taskId : null);
@@ -66,15 +39,6 @@ export const ActivityDrawer = ({
     clearDraft();
     setIsSaving(false);
   }, [content, handleCreate, clearDraft]);
-
-  const handleStatusChange = useCallback(
-    (newStatus: "TODO" | "IN_PROGRESS" | "DONE") => {
-      if (taskId && onStatusChange) {
-        onStatusChange(taskId, newStatus);
-      }
-    },
-    [taskId, onStatusChange],
-  );
 
   return (
     <>
@@ -101,22 +65,6 @@ export const ActivityDrawer = ({
             <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
               {taskTitle}
             </h2>
-            <div className="mt-2 flex gap-1.5">
-              {STATUS_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleStatusChange(option.value)}
-                  className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                    taskStatus === option.value
-                      ? `${option.color} ring-2 ring-blue-400 ring-offset-1 dark:ring-offset-slate-950`
-                      : `${option.color} opacity-50 hover:opacity-80`
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
           </div>
           <button
             type="button"

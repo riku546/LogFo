@@ -129,25 +129,3 @@ export const deleteActivityLog = async (
     throw new ActivityApiError("活動記録の削除に失敗しました", response.status);
   }
 };
-
-/**
- * タスクのステータスを個別に更新する
- */
-export const updateTaskStatus = async (
-  token: string,
-  taskId: string,
-  status: "TODO" | "IN_PROGRESS" | "DONE",
-): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/tasks/${taskId}/status`, {
-    method: "PATCH",
-    headers: getHeaders(token),
-    body: JSON.stringify({ status }),
-  });
-
-  if (!response.ok) {
-    throw new ActivityApiError(
-      "ステータスの更新に失敗しました",
-      response.status,
-    );
-  }
-};

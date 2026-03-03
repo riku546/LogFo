@@ -2,8 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
-import { updateTaskStatus } from "@/features/activity/api/activityApi";
 import { ActivityDrawer } from "@/features/activity/components/ActivityDrawer";
 import { MilestoneCard } from "@/features/roadmap/components/MilestoneCard";
 import { ProgressBar } from "@/features/roadmap/components/ProgressBar";
@@ -50,28 +48,6 @@ export default function RoadmapDetailPage() {
   const handleCloseDrawer = useCallback(() => {
     setSelectedTask(null);
   }, []);
-
-  const handleTaskStatusChange = useCallback(
-    async (taskId: string, newStatus: "TODO" | "IN_PROGRESS" | "DONE") => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      try {
-        await updateTaskStatus(token, taskId, newStatus);
-        setSelectedTask((previous) =>
-          previous ? { ...previous, status: newStatus } : null,
-        );
-        toast.success("ステータスを更新しました");
-      } catch (error) {
-        console.error(error);
-        toast.error("ステータスの更新に失敗しました");
-      }
-    },
-    [],
-  );
 
   if (isLoading) {
     return (
@@ -209,11 +185,7 @@ export default function RoadmapDetailPage() {
           isOpen={selectedTask !== null}
           taskId={selectedTask?.id ?? null}
           taskTitle={selectedTask?.title ?? ""}
-          taskStatus={
-            (selectedTask?.status as "TODO" | "IN_PROGRESS" | "DONE") ?? "TODO"
-          }
           onClose={handleCloseDrawer}
-          onStatusChange={handleTaskStatusChange}
         />
       </div>
     </div>
