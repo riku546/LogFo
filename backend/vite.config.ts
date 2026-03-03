@@ -30,6 +30,7 @@ export default defineConfig(async () => {
             setupFiles: ["./test/apply-migrations.ts"],
             poolOptions: {
               workers: {
+                remoteBindings: false,
                 wrangler: {
                   configPath: "./wrangler.toml",
                 },
