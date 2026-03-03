@@ -4,7 +4,10 @@ import { HTTPException } from "hono/http-exception";
 import { jwt } from "hono/jwt";
 import { buildErrorResponse } from "./lib/buildErrorResponse";
 import { createActivityRoutes } from "./presentation/routes/activityRoutes";
-import { createAuthIntegrationRoutes } from "./presentation/routes/authIntegrationRoutes";
+import {
+  createAuthIntegrationCallbackRoutes,
+  createAuthIntegrationRoutes,
+} from "./presentation/routes/authIntegrationRoutes";
 import { createAuthRoutes } from "./presentation/routes/authRoutes";
 import { createDashboardRoutes } from "./presentation/routes/dashboardRoutes";
 import { createRoadmapRoutes } from "./presentation/routes/roadmapRoutes";
@@ -47,6 +50,7 @@ const app = new Hono<{ Bindings: Env }>()
 
   // 公開ルート（認証不要）
   .route("/", createAuthRoutes())
+  .route("/auth", createAuthIntegrationCallbackRoutes())
 
   // 保護されたルート（JWT認証必須）
   .route("/api/auth", createAuthIntegrationRoutes())

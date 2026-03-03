@@ -9,11 +9,37 @@ export const IntegrationSyncPanel = () => {
   >({});
   // const [syncedProviders, setSyncedProviders] = useState<Record<string, boolean>>({});
 
-  const handleAuthRedirect = (provider: string) => {
+  const handleAuthRedirect = async (provider: string) => {
     setSyncingProviders((prev) => ({ ...prev, [provider]: true }));
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-    // バックエンドのOAuthエンドポイントへ遷移
-    window.location.href = `${API_URL}/api/auth/${provider}`;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+      const res = await fetch(`${API_URL}/api/auth/${provider}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json()) as { message?: string };
+        throw new Error(
+          errorData?.message || "Failed to get authorization url",
+        );
+      }
+
+      const data = (await res.json()) as { redirectUrl?: string };
+      if (data.redirectUrl) {
+        // バックエンドから返されたOAuthエンドポイントへ遷移
+        window.location.href = data.redirectUrl;
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncingProviders((prev) => ({ ...prev, [provider]: false }));
+    }
   };
 
   const providers = [
