@@ -7,7 +7,10 @@ export const createAuthIntegrationRoutes = () => {
   // プロバイダ（GitHubなど）ごとのOAuth認証開始エンドポイント
   router.get("/:provider", async (c) => {
     const provider = c.req.param("provider");
-    const redirectUri = `${c.req.url}/callback`;
+    // コールバックURLを公開ルート（/auth/:provider/callback）に向けるよう調整
+    // request.url (ex: https://api.example.com/api/auth/github) から origin (https://api.example.com) を取得する
+    const baseUrl = new URL(c.req.url);
+    const redirectUri = `${baseUrl.origin}/auth/${provider}/callback`;
     const state = crypto.randomUUID(); // CSRF対策
 
     // stateをCookieに保存してコールバック時に検証する（Secure等属性は環境に合わせて調整）
@@ -29,8 +32,8 @@ export const createAuthIntegrationRoutes = () => {
       githubAuthUrl.searchParams.set("state", state);
       // githubAuthUrl.searchParams.set("scope", "read:user repo"); // 必要に応じて変更
 
-      // 認可URLへリダイレクト
-      return c.redirect(githubAuthUrl.toString());
+      // SPAでのAPI通信に対応するためJSONでリダイレクト先を返す
+      return c.json({ redirectUrl: githubAuthUrl.toString() });
     }
 
     if (provider === "wakatime") {
@@ -44,13 +47,19 @@ export const createAuthIntegrationRoutes = () => {
       wakatimeAuthUrl.searchParams.set("scope", "email,read_stats,read_logged_time");
       wakatimeAuthUrl.searchParams.set("state", state);
 
-      return c.redirect(wakatimeAuthUrl.toString());
+      return c.json({ redirectUrl: wakatimeAuthUrl.toString() });
     }
 
     return c.json({ message: `Provider ${provider} is not supported` }, 400);
   });
 
-  // プロバイダからのコールバックエンドポイント（認可コード受取）
+  return router;
+};
+
+// OAuthプロバイダからのコールバック受取用ルート（JWT認証が不要な公開ルート）
+export const createAuthIntegrationCallbackRoutes = () => {
+  const router = new Hono<{ Bindings: Env }>();
+
   router.get("/:provider/callback", async (c) => {
     // const provider = c.req.param("provider");
     // const code = c.req.query("code");
@@ -59,7 +68,8 @@ export const createAuthIntegrationRoutes = () => {
     
     // 一時的なモック用リダイレクト先（フロントエンドの実装に応じて適宜修正）
     const frontendUrl = new URL(c.env.FRONTEND_ORIGIN);
-    frontendUrl.pathname = `/dashboard`;
+    const provider = c.req.param("provider");
+    frontendUrl.pathname = `/auth/callback/${provider}`;
     frontendUrl.searchParams.set("integration", "success");
 
     return c.redirect(frontendUrl.toString());
