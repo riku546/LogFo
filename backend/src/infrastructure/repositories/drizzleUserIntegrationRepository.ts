@@ -1,17 +1,27 @@
 import { and, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { userIntegrations } from "../database/schema";
 import type { UserIntegrationRepository } from "../../core/application/interfaces/userIntegrationRepository";
 import type { UserIntegration } from "../../core/domain/models/userIntegration";
+import { userIntegrations } from "../database/schema";
 
-export class DrizzleUserIntegrationRepository implements UserIntegrationRepository {
+export class DrizzleUserIntegrationRepository
+  implements UserIntegrationRepository
+{
   constructor(private readonly db: DrizzleD1Database) {}
 
-  async getByProvider(userId: string, provider: string): Promise<UserIntegration | null> {
+  async getByProvider(
+    userId: string,
+    provider: string,
+  ): Promise<UserIntegration | null> {
     const rows = await this.db
       .select()
       .from(userIntegrations)
-      .where(and(eq(userIntegrations.userId, userId), eq(userIntegrations.provider, provider as any)))
+      .where(
+        and(
+          eq(userIntegrations.userId, userId),
+          eq(userIntegrations.provider, provider as any),
+        ),
+      )
       .limit(1);
 
     if (rows.length === 0) return null;
@@ -47,7 +57,10 @@ export class DrizzleUserIntegrationRepository implements UserIntegrationReposito
   async upsertIntegration(
     integration: Omit<UserIntegration, "id" | "createdAt" | "updatedAt">,
   ): Promise<UserIntegration> {
-    const existing = await this.getByProvider(integration.userId, integration.provider);
+    const existing = await this.getByProvider(
+      integration.userId,
+      integration.provider,
+    );
 
     if (existing) {
       const [updated] = await this.db

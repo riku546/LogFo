@@ -62,7 +62,7 @@ export type AppType = typeof app;
 
 export default {
   fetch: app.fetch,
-  async scheduled(event: any, env: Env, ctx: any) {
+  async scheduled(event: any, _env: Env, _ctx: any) {
     console.log("Cron triggered:", event.cron);
     // モック実装：将来的には全ユーザーの userIntegrations を取得してループで syncExternalDataUsecase を呼び出す
     /*

@@ -90,6 +90,33 @@ export const useGetDashboardStatsQuery = () => {
 };
 
 /**
+ * 外部サービス連携状況を取得する SWR Hook
+ */
+export const useGetIntegrationStatusQuery = () => {
+  const token = useToken();
+  const url = `${API_URL}/api/auth/status`;
+
+  const { data, error, isLoading, mutate } = useSWR(
+    token ? [url, token, "integration-status"] : null,
+    fetcher,
+  );
+
+  return {
+    data: data as
+      | {
+          integrations: Array<{
+            provider: string;
+            connected: boolean;
+          }>;
+        }
+      | undefined,
+    error,
+    isLoading,
+    mutate,
+  };
+};
+
+/**
  * 手動同期を実行するフック（SWR の mutate を使用して関連キャッシュを破棄）
  */
 export const useSyncExternalData = () => {
@@ -108,6 +135,18 @@ export const useSyncExternalData = () => {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        const errorData = (await response.json().catch(() => ({}))) as {
+          provider?: string;
+        };
+        const err = new Error("Unauthorized") as Error & {
+          status?: number;
+          provider?: string;
+        };
+        err.status = 401;
+        err.provider = errorData.provider || provider;
+        throw err;
+      }
       throw new Error(`Failed to sync ${provider}`);
     }
 

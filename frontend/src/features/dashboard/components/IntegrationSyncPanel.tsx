@@ -1,13 +1,18 @@
 "use client";
 
-import { CheckCircle2, Code2, Github, RefreshCw } from "lucide-react";
+import { CheckCircle2, Code2, Github, RefreshCw, Send } from "lucide-react";
 import { useState } from "react";
+import {
+  useGetIntegrationStatusQuery,
+  useSyncExternalData,
+} from "../api/dashboardComponents";
 
 export const IntegrationSyncPanel = () => {
+  const { data: statusData } = useGetIntegrationStatusQuery();
+  const { syncData } = useSyncExternalData();
   const [syncingProviders, setSyncingProviders] = useState<
     Record<string, boolean>
   >({});
-  // const [syncedProviders, setSyncedProviders] = useState<Record<string, boolean>>({});
 
   const handleAuthRedirect = async (provider: string) => {
     setSyncingProviders((prev) => ({ ...prev, [provider]: true }));
@@ -33,12 +38,38 @@ export const IntegrationSyncPanel = () => {
 
       const data = (await res.json()) as { redirectUrl?: string };
       if (data.redirectUrl) {
-        // バックエンドから返されたOAuthエンドポイントへ遷移
         window.location.href = data.redirectUrl;
       }
     } catch (e) {
       console.error(e);
       setSyncingProviders((prev) => ({ ...prev, [provider]: false }));
+    }
+  };
+
+  const handleSyncNow = async (provider: string) => {
+    setSyncingProviders((prev) => ({ ...prev, [provider]: true }));
+    let isUnauthorized = false;
+    try {
+      await syncData(provider);
+      // 成功トーストなどを出せればベター
+      alert(`${provider}の同期が完了しました`);
+    } catch (e: unknown) {
+      console.error(e);
+      const error = e as { status?: number };
+      if (error.status === 401) {
+        isUnauthorized = true;
+        // 401の場合は自動で再連携リダイレクトを実行
+        console.log(
+          `401 Unauthorized detected for ${provider}. Redirecting to auth...`,
+        );
+        handleAuthRedirect(provider);
+        return;
+      }
+      alert(`${provider}の同期に失敗しました`);
+    } finally {
+      if (!isUnauthorized) {
+        setSyncingProviders((prev) => ({ ...prev, [provider]: false }));
+      }
     }
   };
 
@@ -76,8 +107,9 @@ export const IntegrationSyncPanel = () => {
       <div className="flex flex-col space-y-3">
         {providers.map((p) => {
           const isSyncing = syncingProviders[p.id];
-          // 本来はDBから連携済みかどうかを取得するが、今はハードコード（未連携と想定）
-          const isSynced = false;
+          const isSynced = statusData?.integrations.some(
+            (i) => i.provider === p.id && i.connected,
+          );
 
           return (
             <div
@@ -86,31 +118,51 @@ export const IntegrationSyncPanel = () => {
             >
               <div className="flex items-center space-x-3">
                 {p.icon}
-                <span className="font-medium">{p.name}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{p.name}</span>
+                  {isSynced && (
+                    <span className="text-[10px] text-green-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> 連携済み
+                    </span>
+                  )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleAuthRedirect(p.id)}
-                disabled={isSyncing}
-                className="flex items-center space-x-2 px-4 py-2 bg-[var(--color-primary)] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSyncing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>遷移中...</span>
-                  </>
-                ) : isSynced ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>連携済み</span>
-                  </>
+              <div className="flex space-x-2">
+                {isSynced ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSyncNow(p.id)}
+                    disabled={isSyncing}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isSyncing ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    <span>今すぐ同期</span>
+                  </button>
                 ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4" />
-                    <span>連携する</span>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => handleAuthRedirect(p.id)}
+                    disabled={isSyncing}
+                    className="flex items-center space-x-2 px-4 py-2 bg-[var(--color-primary)] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>遷移中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4" />
+                        <span>連携する</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           );
         })}

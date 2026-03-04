@@ -4,7 +4,10 @@ export interface UserIntegrationRepository {
   /**
    * ユーザーの特定のプロバイダ設定を取得する
    */
-  getByProvider(userId: string, provider: string): Promise<UserIntegration | null>;
+  getByProvider(
+    userId: string,
+    provider: string,
+  ): Promise<UserIntegration | null>;
 
   /**
    * ユーザーのすべてのプロバイダ設定を取得する
@@ -14,5 +17,7 @@ export interface UserIntegrationRepository {
   /**
    * 連携設定を保存または更新する
    */
-  upsertIntegration(integration: Omit<UserIntegration, "id" | "createdAt" | "updatedAt">): Promise<UserIntegration>;
+  upsertIntegration(
+    integration: Omit<UserIntegration, "id" | "createdAt" | "updatedAt">,
+  ): Promise<UserIntegration>;
 }

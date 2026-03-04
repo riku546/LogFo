@@ -7,17 +7,22 @@ export const ContributionsHeatmap = () => {
   const { data, isLoading, error } = useGetDashboardHeatmapQuery();
 
   // SVGで簡易的にヒートマップを描画する（D3やreact-calendar-heatmapの代用）
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: SVG描画のための日付計算が一定の複雑度を持つため許容
   const heatmapCells = useMemo(() => {
     if (!data?.heatmapData) return [];
 
-    // データがある日付のみを取得しマップ化
+    const getLevel = (count: number) => {
+      if (count === 0) return 0;
+      if (count <= 2) return 1;
+      if (count <= 5) return 2;
+      if (count <= 8) return 3;
+      return 4;
+    };
+
     const countMap = new Map<string, number>();
     for (const d of data.heatmapData) {
       countMap.set(d.date, d.totalCount);
     }
 
-    // 過去100日分のセルを生成 (デモ用)
     const cells = [];
     const today = new Date();
     for (let i = 100; i >= 0; i--) {
@@ -29,17 +34,7 @@ export const ContributionsHeatmap = () => {
       cells.push({
         date: dateStr,
         count,
-        // GitHub風の色付け
-        level:
-          count === 0
-            ? 0
-            : count <= 2
-              ? 1
-              : count <= 5
-                ? 2
-                : count <= 8
-                  ? 3
-                  : 4,
+        level: getLevel(count),
       });
     }
     return cells;

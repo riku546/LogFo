@@ -1,29 +1,55 @@
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { setCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
+import { sign, verify } from "hono/jwt";
+import { DrizzleUserIntegrationRepository } from "../../infrastructure/repositories/drizzleUserIntegrationRepository";
+
+const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
+  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
+  if (!jwtPayload?.sub) {
+    throw new HTTPException(401, { message: "Invalid token" });
+  }
+  return jwtPayload.sub;
+};
 
 export const createAuthIntegrationRoutes = () => {
   const router = new Hono<{ Bindings: Env }>();
+
+  router.get("/status", async (c) => {
+    const userId = getUserIdFromJwt(c);
+    const db = drizzle(c.env.DB);
+    const repo = new DrizzleUserIntegrationRepository(db);
+    const integrations = await repo.getAllByUserId(userId);
+    return c.json({
+      integrations: integrations.map((i) => ({
+        provider: i.provider,
+        connected: true,
+      })),
+    });
+  });
 
   // プロバイダ（GitHubなど）ごとのOAuth認証開始エンドポイント
   router.get("/:provider", async (c) => {
     const provider = c.req.param("provider");
     // コールバックURLを公開ルート（/auth/:provider/callback）に向けるよう調整
     // request.url (ex: https://api.example.com/api/auth/github) から origin (https://api.example.com) を取得する
+    const userId = getUserIdFromJwt(c);
     const baseUrl = new URL(c.req.url);
     const redirectUri = `${baseUrl.origin}/auth/${provider}/callback`;
-    const state = crypto.randomUUID(); // CSRF対策
 
-    // stateをCookieに保存してコールバック時に検証する（Secure等属性は環境に合わせて調整）
-    setCookie(c, "oauth_state", state, {
-      path: "/",
-      httpOnly: true,
-      secure: c.env.FRONTEND_ORIGIN.startsWith("https"),
-      maxAge: 60 * 10, // 10分
-    });
+    // Cookieの代わりに署名付きStateを作成
+    // userIdを含め、有効期限（10分）を設定する
+    const statePayload = {
+      sub: userId,
+      nonce: crypto.randomUUID(),
+      exp: Math.floor(Date.now() / 1000) + 60 * 10,
+    };
+    const state = await sign(statePayload, c.env.JWT_SECRET, "HS256");
 
     if (provider === "github") {
       const clientId = c.env.GITHUB_CLIENT_ID;
-      if (!clientId) return c.json({ message: "GitHub Client ID is not configured" }, 500);
+      if (!clientId)
+        return c.json({ message: "GitHub Client ID is not configured" }, 500);
 
       // GitHubのOAuth認可URLを構築（スコープはリポジトリ読み取りなどを要求可能。環境により調整）
       const githubAuthUrl = new URL("https://github.com/login/oauth/authorize");
@@ -38,13 +64,17 @@ export const createAuthIntegrationRoutes = () => {
 
     if (provider === "wakatime") {
       const clientId = c.env.WAKATIME_APP_ID;
-      if (!clientId) return c.json({ message: "WakaTime App ID is not configured" }, 500);
+      if (!clientId)
+        return c.json({ message: "WakaTime App ID is not configured" }, 500);
 
       const wakatimeAuthUrl = new URL("https://wakatime.com/oauth/authorize");
       wakatimeAuthUrl.searchParams.set("client_id", clientId);
       wakatimeAuthUrl.searchParams.set("response_type", "code");
       wakatimeAuthUrl.searchParams.set("redirect_uri", redirectUri);
-      wakatimeAuthUrl.searchParams.set("scope", "email,read_stats,read_logged_time");
+      wakatimeAuthUrl.searchParams.set(
+        "scope",
+        "email,read_stats,read_logged_time",
+      );
       wakatimeAuthUrl.searchParams.set("state", state);
 
       return c.json({ redirectUrl: wakatimeAuthUrl.toString() });
@@ -56,23 +86,176 @@ export const createAuthIntegrationRoutes = () => {
   return router;
 };
 
+// 補助関数: プロバイダごとのコールバック処理
+async function handleGithubCallback(
+  c: { env: Env; req: { url: string } },
+  code: string,
+  userId: string,
+) {
+  // 1. Exchange code for access token
+  const tokenResp = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      client_id: c.env.GITHUB_CLIENT_ID,
+      client_secret: c.env.GITHUB_CLIENT_SECRET,
+      code,
+    }),
+  });
+
+  const tokenData = (await tokenResp.json()) as {
+    access_token?: string;
+    error?: string;
+  };
+  if (!tokenData.access_token) {
+    throw new Error(tokenData.error || "Failed to get access token");
+  }
+
+  // 2. Get GitHub user info
+  const userResp = await fetch("https://api.github.com/user", {
+    headers: {
+      Authorization: `token ${tokenData.access_token}`,
+      "User-Agent": "LogFo-App",
+    },
+  });
+  const githubUser = (await userResp.json()) as {
+    id: number;
+    login: string;
+  };
+
+  // 3. Save to database
+  const db = drizzle(c.env.DB);
+  const repo = new DrizzleUserIntegrationRepository(db);
+  await repo.upsertIntegration({
+    userId,
+    provider: "github",
+    providerUserId: githubUser.login,
+    accessToken: tokenData.access_token,
+  });
+}
+
+async function handleWakatimeCallback(
+  c: { env: Env; req: { url: string } },
+  code: string,
+  userId: string,
+) {
+  // 1. Exchange code for access token
+  const tokenResp = await fetch("https://wakatime.com/oauth/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({
+      client_id: c.env.WAKATIME_APP_ID,
+      client_secret: c.env.WAKATIME_APP_SECRET,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: `${new URL(c.req.url).origin}/auth/wakatime/callback`,
+    }),
+  });
+
+  const tokenData = (await tokenResp.json()) as {
+    access_token?: string;
+    error?: string;
+  };
+  if (!tokenData.access_token) {
+    throw new Error(tokenData.error || "Failed to get WakaTime access token");
+  }
+
+  // 2. Get WakaTime user info
+  const userResp = await fetch("https://wakatime.com/api/v1/users/current", {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+    },
+  });
+  const wakaUser = (await userResp.json()) as {
+    data: { id: string; username: string };
+  };
+
+  // 3. Save to database
+  const db = drizzle(c.env.DB);
+  const repo = new DrizzleUserIntegrationRepository(db);
+  await repo.upsertIntegration({
+    userId,
+    provider: "wakatime",
+    providerUserId: wakaUser.data.username || wakaUser.data.id,
+    accessToken: tokenData.access_token,
+  });
+}
+
+// 補助関数: リダイレクトURLの生成
+function buildRedirectUrl(
+  origin: string,
+  provider: string,
+  status: "success" | "error",
+  message?: string,
+) {
+  const frontendUrl = new URL(origin);
+  frontendUrl.pathname = `/auth/callback/${provider}`;
+  frontendUrl.searchParams.set("integration", status);
+  if (message) {
+    frontendUrl.searchParams.set("message", message);
+  }
+  return frontendUrl.toString();
+}
+
 // OAuthプロバイダからのコールバック受取用ルート（JWT認証が不要な公開ルート）
 export const createAuthIntegrationCallbackRoutes = () => {
   const router = new Hono<{ Bindings: Env }>();
 
   router.get("/:provider/callback", async (c) => {
-    // const provider = c.req.param("provider");
-    // const code = c.req.query("code");
-    // const state = c.req.query("state");
-    // ここで state の検証と、code を用いた Token 交換処理を行い、userIntegrations に保存する
-    
-    // 一時的なモック用リダイレクト先（フロントエンドの実装に応じて適宜修正）
-    const frontendUrl = new URL(c.env.FRONTEND_ORIGIN);
     const provider = c.req.param("provider");
-    frontendUrl.pathname = `/auth/callback/${provider}`;
-    frontendUrl.searchParams.set("integration", "success");
+    const code = c.req.query("code");
+    const state = c.req.query("state");
 
-    return c.redirect(frontendUrl.toString());
+    if (!(code && state)) {
+      console.error("OAuth Callback Validation Failed: Missing code or state");
+      return c.redirect(
+        buildRedirectUrl(
+          c.env.FRONTEND_ORIGIN,
+          provider,
+          "error",
+          "Missing authorization code or state",
+        ),
+      );
+    }
+
+    try {
+      const payload = await verify(state, c.env.JWT_SECRET, "HS256");
+      const userId = payload.sub as string;
+      if (!userId) throw new Error("User ID not found in state");
+
+      if (provider === "github") {
+        await handleGithubCallback(
+          { env: c.env, req: { url: c.req.url } },
+          code,
+          userId,
+        );
+      } else if (provider === "wakatime") {
+        await handleWakatimeCallback(
+          { env: c.env, req: { url: c.req.url } },
+          code,
+          userId,
+        );
+      } else {
+        throw new Error(`Provider ${provider} not supported yet for callback`);
+      }
+
+      return c.redirect(
+        buildRedirectUrl(c.env.FRONTEND_ORIGIN, provider, "success"),
+      );
+    } catch (error: unknown) {
+      console.error("OAuth Callback Error:", error);
+      const message =
+        error instanceof Error ? error.message : "Internal server error";
+      return c.redirect(
+        buildRedirectUrl(c.env.FRONTEND_ORIGIN, provider, "error", message),
+      );
+    }
   });
 
   return router;

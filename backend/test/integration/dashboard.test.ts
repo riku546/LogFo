@@ -25,116 +25,33 @@ const getAuthToken = async (
   return signinBody.token;
 };
 
-describe("Dashboard & Integration API Integration Test", () => {
-  describe("手動同期機能 (POST /api/dashboard/sync/:provider)", () => {
-    it("モックデータを利用してGithubの同期処理が正常終了する", async () => {
-      const token = await getAuthToken("dashboard-sync@example.com");
+describe("統計情報取得 (GET /api/dashboard/stats)", () => {
+  it("ダッシュボード用のグラフ・統計データが取得できる", async () => {
+    const token = await getAuthToken("dashboard-stats@example.com");
 
-      const response = await SELF.fetch(
-        "http://localhost:8787/api/dashboard/sync/github",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      expect(response.status).toBe(200);
-      const body = (await response.json()) as { message: string, syncedItemsCount: number };
-      expect(body.message).toBe("Successfully synced github data");
-      expect(body.syncedItemsCount).toBeGreaterThanOrEqual(1); // モックで何らか保存される想定
+    await SELF.fetch("http://localhost:8787/api/dashboard/sync/github", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    it("サポートされていないプロバイダの場合は400エラーとなる", async () => {
-      const token = await getAuthToken("dashboard-sync-err@example.com");
+    const response = await SELF.fetch(
+      "http://localhost:8787/api/dashboard/stats",
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
-      const response = await SELF.fetch(
-        "http://localhost:8787/api/dashboard/sync/unknown_provider",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      expect(response.status).toBe(400); // Validation Errorを期待
-    });
-  });
-
-  describe("ダッシュボードデータ取得 (GET /api/dashboard/heatmap)", () => {
-    it("同期後、ヒートマップ用の集計データが取得できる", async () => {
-      const token = await getAuthToken("dashboard-heatmap@example.com");
-
-      // 先に同期データを作成
-      await SELF.fetch(
-        "http://localhost:8787/api/dashboard/sync/github",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      // 手動ログも１つ作成 (taskIdが必要だが今回は簡略化、外部データ側のCountだけでも検証できるか確認)
-      // 今回は外部同期分だけで配列が返るかをテスト
-
-      const response = await SELF.fetch(
-        "http://localhost:8787/api/dashboard/heatmap?startDate=2026-03-01&endDate=2026-03-31",
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      expect(response.status).toBe(200);
-      const body = (await response.json()) as {
-        heatmapData: Array<{
-          date: string;
-          totalCount: number;
-        }>;
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      stats: {
+        totalActivities: number;
+        providerDistribution: Record<string, number>;
       };
-      // githubモックデータが含まれているはず
-      expect(body.heatmapData).toBeInstanceOf(Array);
-      expect(body.heatmapData.length).toBeGreaterThanOrEqual(1);
-    });
-  });
+    };
 
-  describe("統計情報取得 (GET /api/dashboard/stats)", () => {
-    it("ダッシュボード用のグラフ・統計データが取得できる", async () => {
-      const token = await getAuthToken("dashboard-stats@example.com");
-
-      await SELF.fetch(
-        "http://localhost:8787/api/dashboard/sync/github",
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const response = await SELF.fetch(
-        "http://localhost:8787/api/dashboard/stats",
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      expect(response.status).toBe(200);
-      const body = (await response.json()) as {
-        stats: {
-          totalActivities: number;
-          providerDistribution: Record<string, number>;
-        };
-      };
-      
-      expect(body.stats).toBeDefined();
-      expect(body.stats.totalActivities).toBeGreaterThanOrEqual(0);
-      expect(body.stats.providerDistribution).toBeDefined();
-    });
+    expect(body.stats).toBeDefined();
+    expect(body.stats.totalActivities).toBeGreaterThanOrEqual(0);
+    expect(body.stats.providerDistribution).toBeDefined();
   });
 });

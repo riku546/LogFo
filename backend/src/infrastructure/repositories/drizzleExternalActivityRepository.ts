@@ -1,10 +1,12 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { externalActivities } from "../database/schema";
 import type { ExternalActivityRepository } from "../../core/application/interfaces/externalActivityRepository";
 import type { ExternalActivity } from "../../core/domain/models/externalActivity";
+import { externalActivities } from "../database/schema";
 
-export class DrizzleExternalActivityRepository implements ExternalActivityRepository {
+export class DrizzleExternalActivityRepository
+  implements ExternalActivityRepository
+{
   constructor(private readonly db: DrizzleD1Database) {}
 
   async upsertActivities(
