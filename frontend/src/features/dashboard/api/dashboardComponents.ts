@@ -33,28 +33,28 @@ const useToken = () => {
 };
 
 /**
- * ヒートマップ用データを取得する SWR Hook
+ * プロバイダー別活動ウィジェット用データを取得する SWR Hook
  */
-export const useGetDashboardHeatmapQuery = (
-  startDate?: string,
-  endDate?: string,
-) => {
+export const useGetProviderWidgetsQuery = () => {
   const token = useToken();
-
-  const qs = new URLSearchParams();
-  if (startDate) qs.append("startDate", startDate);
-  if (endDate) qs.append("endDate", endDate);
-
-  const url = `${API_URL}/api/dashboard/heatmap${qs.toString() ? `?${qs.toString()}` : ""}`;
+  const url = `${API_URL}/api/dashboard/provider-widgets`;
 
   const { data, error, isLoading, mutate } = useSWR(
-    token ? [url, token, "dashboard-heatmap"] : null,
+    token ? [url, token, "dashboard-provider-widgets"] : null,
     fetcher,
   );
 
   return {
     data: data as
-      | { heatmapData: Array<{ date: string; totalCount: number }> }
+      | {
+          widgetsData: Record<
+            string,
+            {
+              last10Days: { date: string; count: number }[];
+              batteryLevel: number;
+            }
+          >;
+        }
       | undefined,
     error,
     isLoading,
@@ -156,11 +156,12 @@ export const useSyncExternalData = () => {
     };
 
     // SWR キャッシュを破棄して再フェッチを促す
-    // mutate は キーを条件に破棄できる。配列の第3要素に "dashboard-heatmap" などを入れているためフィルタを使う
+    // mutate は キーを条件に破棄できる。配列の第3要素に "dashboard-provider-widgets" などを入れる
     await mutate(
       (key) =>
         Array.isArray(key) &&
-        (key.includes("dashboard-heatmap") || key.includes("dashboard-stats")),
+        (key.includes("dashboard-provider-widgets") ||
+          key.includes("dashboard-stats")),
       undefined,
       { revalidate: true },
     );

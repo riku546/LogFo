@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ContributionsHeatmap } from "../../../src/features/dashboard/components/ContributionsHeatmap";
+import { ContributionsHeatmap } from "../../../src/features/dashboard/components/ActivityWidget";
 
 // React Query Hook is mocked for returning mock heatmap data
 vi.mock("../../../src/features/dashboard/api/dashboardComponents", () => ({

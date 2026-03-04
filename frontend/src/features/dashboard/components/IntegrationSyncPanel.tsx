@@ -84,15 +84,15 @@ export const IntegrationSyncPanel = () => {
       name: "WakaTime",
       icon: <Code2 className="w-5 h-5 text-purple-500" />,
     },
-    {
-      id: "zenn",
-      name: "Zenn",
-      icon: (
-        <span className="w-5 h-5 flex items-center justify-center font-bold text-blue-500">
-          Z
-        </span>
-      ),
-    },
+    // {
+    //   id: "zenn",
+    //   name: "Zenn",
+    //   icon: (
+    //     <span className="w-5 h-5 flex items-center justify-center font-bold text-blue-500">
+    //       Z
+    //     </span>
+    //   ),
+    // },
   ];
 
   return (

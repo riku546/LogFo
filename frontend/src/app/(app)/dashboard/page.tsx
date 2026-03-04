@@ -1,5 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
-import { ContributionsHeatmap } from "../../../features/dashboard/components/ContributionsHeatmap";
+import { ContributionsHeatmap } from "../../../features/dashboard/components/ActivityWidget";
 import { IntegrationSyncPanel } from "../../../features/dashboard/components/IntegrationSyncPanel";
 import { SummaryCharts } from "../../../features/dashboard/components/SummaryCharts";
 

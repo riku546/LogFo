@@ -95,43 +95,17 @@ export const createDashboardRoutes = () => {
         },
       )
 
-      // ===== ヒートマップデータ取得 =====
-      .get(
-        "/dashboard/heatmap",
-        zValidator(
-          "query",
-          z.object({
-            startDate: z.string().optional(),
-            endDate: z.string().optional(),
-          }),
-        ),
-        async (c) => {
-          const userId = getUserIdFromJwt(c);
-          const query = c.req.valid("query");
+      // ===== プロバイダー別ウィジェットデータ取得 =====
+      .get("/dashboard/provider-widgets", async (c) => {
+        const userId = getUserIdFromJwt(c);
 
-          // デフォルトは過去1年
-          const today = new Date();
-          const lastYear = new Date();
-          lastYear.setFullYear(today.getFullYear() - 1);
+        const db = drizzle(c.env.DB);
+        const externalActivityRepo = new DrizzleExternalActivityRepository(db);
+        const usecase = new GetDashboardDataUsecase(externalActivityRepo);
 
-          const startDate =
-            query.startDate || lastYear.toISOString().split("T")[0];
-          const endDate = query.endDate || today.toISOString().split("T")[0];
-
-          const db = drizzle(c.env.DB);
-          const externalActivityRepo = new DrizzleExternalActivityRepository(
-            db,
-          );
-          const usecase = new GetDashboardDataUsecase(externalActivityRepo);
-
-          const heatmapData = await usecase.getHeatmapData(
-            userId,
-            startDate,
-            endDate,
-          );
-          return c.json({ heatmapData }, 200);
-        },
-      )
+        const widgetsData = await usecase.getProviderWidgetsData(userId);
+        return c.json({ widgetsData }, 200);
+      })
 
       // ===== ダッシュボード統計データ取得 =====
       .get("/dashboard/stats", async (c) => {

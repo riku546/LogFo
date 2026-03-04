@@ -55,3 +55,30 @@ describe("統計情報取得 (GET /api/dashboard/stats)", () => {
     expect(body.stats.providerDistribution).toBeDefined();
   });
 });
+
+describe("ダッシュボードデータ取得 (GET /api/dashboard/provider-widgets)", () => {
+  it("指定期間のプロバイダー別ウィジェット情報が取得できる", async () => {
+    const token = await getAuthToken("dashboard-widgets@example.com");
+
+    const response = await SELF.fetch(
+      "http://localhost:8787/api/dashboard/provider-widgets",
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      widgetsData: Record<
+        string,
+        {
+          last10Days: { date: string; count: number }[];
+          batteryLevel: number;
+        }
+      >;
+    };
+
+    expect(body).toHaveProperty("widgetsData");
+  });
+});
