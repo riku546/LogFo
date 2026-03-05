@@ -11,6 +11,7 @@ import {
 import { createAuthRoutes } from "./presentation/routes/authRoutes";
 import { createDashboardRoutes } from "./presentation/routes/dashboardRoutes";
 import { createRoadmapRoutes } from "./presentation/routes/roadmapRoutes";
+import { createSummaryRoutes } from "./presentation/routes/summaryRoutes";
 
 const app = new Hono<{ Bindings: Env }>()
   .onError((err, c) => {
@@ -56,7 +57,8 @@ const app = new Hono<{ Bindings: Env }>()
   .route("/api/auth", createAuthIntegrationRoutes())
   .route("/api/roadmap", createRoadmapRoutes())
   .route("/api", createDashboardRoutes())
-  .route("/api", createActivityRoutes());
+  .route("/api", createActivityRoutes())
+  .route("/api", createSummaryRoutes());
 
 export type AppType = typeof app;
 
