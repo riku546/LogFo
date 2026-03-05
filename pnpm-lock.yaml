@@ -12,7 +12,6 @@ overrides:
   '@smithy/config-resolver': '>=4.4.0'
   undici: '>=7.18.2'
   rollup: '>=4.59.0'
-  hono: '>=4.12.4'
 
 importers:
 
@@ -42,7 +41,7 @@ importers:
         specifier: ^4.12.0
         version: 4.12.0
       hono:
-        specifier: '>=4.12.4'
+        specifier: ^4.12.5
         version: 4.12.5
       pdfjs-serverless:
         specifier: ^1.1.0
@@ -103,7 +102,7 @@ importers:
         specifier: workspace:*
         version: link:../backend
       hono:
-        specifier: '>=4.12.4'
+        specifier: ^4.12.5
         version: 4.12.5
       lucide-react:
         specifier: ^0.576.0
@@ -1178,7 +1177,7 @@ packages:
   '@hono/zod-validator@0.7.6':
     resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
     peerDependencies:
-      hono: '>=4.12.4'
+      hono: '>=3.9.0'
       zod: ^3.25.0 || ^4.0.0
 
   '@img/colour@1.0.0':
