@@ -61,4 +61,12 @@ export interface ActivityLogRepository {
    * @returns ユーザーがオーナーの場合true
    */
   isOwner(activityLogId: string, userId: string): Promise<boolean>;
+
+  /**
+   * マイルストーンに紐づく全タスクの活動記録を日時昇順で取得します。
+   *
+   * @param milestoneId - マイルストーンのID
+   * @returns 活動記録の配列
+   */
+  findByMilestoneId(milestoneId: string): Promise<ActivityLog[]>;
 }

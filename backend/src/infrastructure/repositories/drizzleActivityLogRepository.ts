@@ -1,11 +1,11 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type {
   ActivityLogRepository,
   CreateActivityLogInput,
 } from "../../core/application/interfaces/activityLogRepository";
 import type { ActivityLog } from "../../core/domain/models/activity";
-import { activityLogs } from "../database/schema";
+import { activityLogs, tasks } from "../database/schema";
 
 /**
  * Drizzle ORMを使用したActivityLogRepositoryの具体実装
@@ -109,5 +109,32 @@ export class DrizzleActivityLogRepository implements ActivityLogRepository {
       .where(eq(activityLogs.id, activityLogId));
 
     return rows[0]?.userId === userId;
+  }
+
+  /**
+   * マイルストーンに紐づく全タスクの活動記録を日時昇順で取得します。
+   * N+1問題を回避するため、タスクIDリストを先に取得してからINクエリで一括取得します。
+   *
+   * @param milestoneId - マイルストーンのID
+   * @returns 活動記録の配列
+   */
+  async findByMilestoneId(milestoneId: string): Promise<ActivityLog[]> {
+    // まずマイルストーンに紐づくタスクIDを取得
+    const taskRows = await this.db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(eq(tasks.milestoneId, milestoneId));
+
+    const taskIds = taskRows.map((row) => row.id);
+    if (taskIds.length === 0) return [];
+
+    // タスクIDリストに紐づく活動記録を一括取得（日時昇順）
+    const rows = await this.db
+      .select()
+      .from(activityLogs)
+      .where(inArray(activityLogs.taskId, taskIds))
+      .orderBy(activityLogs.loggedDate, activityLogs.createdAt);
+
+    return rows as ActivityLog[];
   }
 }

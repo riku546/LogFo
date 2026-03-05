@@ -20,3 +20,8 @@ export const createOpenRouterProvider = (apiKey: string) => {
 // export const ROADMAP_MODEL_ID = "arcee-ai/trinity-large-preview:free" as const;
 
 export const ROADMAP_MODEL_ID = "google/gemini-2.5-flash-lite" as const;
+
+/**
+ * サマリー生成に使用するモデルID
+ */
+export const SUMMARY_MODEL_ID = "google/gemini-2.5-flash-lite" as const;
