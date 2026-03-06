@@ -24,7 +24,10 @@ const createDefaultSettings = (): PortfolioSettings => ({
     avatarUrl: "",
     socialLinks: {
       github: "",
-      twitter: "",
+      x: "",
+      zenn: "",
+      qiita: "",
+      atcoder: "",
       website: "",
     },
   },

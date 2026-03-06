@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import type {
   PortfolioSettings,
   PublicPortfolioData,
 } from "../api/portfolioApi";
+import { QiitaIcon, ZennIcon } from "./icons";
 
 export interface PortfolioPublicViewProps {
   settings: PortfolioSettings;
@@ -43,7 +45,7 @@ export const PortfolioPublicView = ({
         )}
         {/* SNSリンク */}
         {profile.socialLinks && (
-          <div className="flex justify-center gap-4 pt-2">
+          <div className="flex justify-center flex-wrap gap-4 pt-2">
             {profile.socialLinks.github && (
               <a
                 href={profile.socialLinks.github}
@@ -62,9 +64,9 @@ export const PortfolioPublicView = ({
                 </svg>
               </a>
             )}
-            {profile.socialLinks.twitter && (
+            {profile.socialLinks.x && (
               <a
-                href={profile.socialLinks.twitter}
+                href={profile.socialLinks.x}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors duration-200"
@@ -74,10 +76,58 @@ export const PortfolioPublicView = ({
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   role="img"
-                  aria-label="Twitter"
+                  aria-label="X (Twitter)"
                 >
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
+              </a>
+            )}
+            {profile.socialLinks.zenn && (
+              <a
+                href={profile.socialLinks.zenn}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity duration-200 p-0.5"
+                title="Zenn"
+              >
+                <ZennIcon className="w-6 h-6" />
+              </a>
+            )}
+            {profile.socialLinks.qiita && (
+              <a
+                href={profile.socialLinks.qiita}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#55C500] dark:text-white hover:opacity-80 transition-opacity duration-200 p-0.5"
+                title="Qiita"
+              >
+                <QiitaIcon className="w-6 h-6" />
+              </a>
+            )}
+            {profile.socialLinks.atcoder && (
+              <a
+                href={profile.socialLinks.atcoder}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity duration-200 p-0.5 flex items-center"
+                title="AtCoder"
+              >
+                <div className="relative h-6 w-[71px] flex items-center justify-center">
+                  <Image
+                    src="/atcoder_logo.png"
+                    alt="AtCoder"
+                    fill
+                    className="object-contain dark:hidden"
+                    sizes="71px"
+                  />
+                  <Image
+                    src="/atcoder_logo_white.png"
+                    alt="AtCoder"
+                    fill
+                    className="object-contain hidden dark:block"
+                    sizes="71px"
+                  />
+                </div>
               </a>
             )}
             {profile.socialLinks.website && (
@@ -108,7 +158,7 @@ export const PortfolioPublicView = ({
       {/* サマリーセクション */}
       {summaries.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white font-(--font-poppins)">
+          <h2 className="text-xl text-slate-900 dark:text-white font-(--font-poppins)">
             サマリー
           </h2>
           {summaries.map((summary) => (

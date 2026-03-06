@@ -35,7 +35,7 @@ const createTestSettings = (overrides = {}) => ({
     avatarUrl: "",
     socialLinks: {
       github: "",
-      twitter: "",
+      x: "",
       website: "",
     },
   },

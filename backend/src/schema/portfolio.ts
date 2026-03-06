@@ -7,7 +7,10 @@ import { z } from "zod";
  */
 export const socialLinksSchema = z.object({
   github: z.string().url().optional().or(z.literal("")),
-  twitter: z.string().url().optional().or(z.literal("")),
+  x: z.string().url().optional().or(z.literal("")),
+  zenn: z.string().url().optional().or(z.literal("")),
+  qiita: z.string().url().optional().or(z.literal("")),
+  atcoder: z.string().url().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
 });
 

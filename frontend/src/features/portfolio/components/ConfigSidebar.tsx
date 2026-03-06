@@ -116,7 +116,9 @@ export const ConfigSidebar = ({
           SNSリンク
         </h3>
         <div className="space-y-3">
-          {(["github", "twitter", "website"] as const).map((key) => (
+          {(
+            ["github", "x", "zenn", "qiita", "atcoder", "website"] as const
+          ).map((key) => (
             <div key={key}>
               <label
                 htmlFor={`social-${key}`}
