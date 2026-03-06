@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
+import { PublishSettingsModal } from "@/features/portfolio/components/PublishSettingsModal";
 import { PublishSettingsPanel } from "@/features/portfolio/components/PublishSettingsPanel";
 import { usePortfolioBuilder } from "@/features/portfolio/hooks/usePortfolioBuilder";
 import type { RoadmapListItem } from "@/features/roadmap/api/roadmapApi";
@@ -16,7 +17,7 @@ import { fetchSummariesByMilestone } from "@/features/summary/api/summaryApi";
 /**
  * ポートフォリオビルダーページ
  * ConfigSidebar（左）+ LivePreviewPane（中央）の2カラム構成と、
- * 下部にPublishSettingsPanelを配置します。
+ * 下部にアクションバー、公開設定モーダルを配置します。
  */
 export default function PortfolioBuilderPage() {
   const {
@@ -39,6 +40,7 @@ export default function PortfolioBuilderPage() {
   const [availableSummaries, setAvailableSummaries] = useState<SummaryItem[]>(
     [],
   );
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
   /**
    * 選択可能なロードマップとサマリーを読み込む
@@ -111,14 +113,21 @@ export default function PortfolioBuilderPage() {
         <LivePreviewPane settings={settings} />
       </div>
 
-      {/* 下部: 公開設定パネル */}
+      {/* 下部: アクションバー */}
       <PublishSettingsPanel
+        isSaving={isSaving}
+        onSave={handleSave}
+        onOpenPublishSettings={() => setIsPublishModalOpen(true)}
+      />
+
+      {/* 公開設定モーダル */}
+      <PublishSettingsModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
         slug={slug}
         isPublic={isPublic}
-        isSaving={isSaving}
         onSlugChange={setSlug}
         onIsPublicChange={setIsPublic}
-        onSave={handleSave}
       />
     </div>
   );
