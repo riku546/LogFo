@@ -10,6 +10,10 @@ import {
 } from "./presentation/routes/authIntegrationRoutes";
 import { createAuthRoutes } from "./presentation/routes/authRoutes";
 import { createDashboardRoutes } from "./presentation/routes/dashboardRoutes";
+import {
+  createPortfolioRoutes,
+  createPublicPortfolioRoutes,
+} from "./presentation/routes/portfolioRoutes";
 import { createRoadmapRoutes } from "./presentation/routes/roadmapRoutes";
 import { createSummaryRoutes } from "./presentation/routes/summaryRoutes";
 
@@ -52,13 +56,14 @@ const app = new Hono<{ Bindings: Env }>()
   // 公開ルート（認証不要）
   .route("/", createAuthRoutes())
   .route("/auth", createAuthIntegrationCallbackRoutes())
-
+  .route("/portfolio", createPublicPortfolioRoutes())
   // 保護されたルート（JWT認証必須）
   .route("/api/auth", createAuthIntegrationRoutes())
   .route("/api/roadmap", createRoadmapRoutes())
   .route("/api", createDashboardRoutes())
   .route("/api", createActivityRoutes())
-  .route("/api", createSummaryRoutes());
+  .route("/api", createSummaryRoutes())
+  .route("/api", createPortfolioRoutes());
 
 export type AppType = typeof app;
 
