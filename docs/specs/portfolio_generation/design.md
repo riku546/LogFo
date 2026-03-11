@@ -2,51 +2,92 @@
 
 ## 1. フロントエンド実装設計 (Frontend)
 
-### 1.1. コンポーネント構成 (`src/features/portfolio/`)
+### 1.1. ルート構成
 
-最終的な成果物（Webページ）を生成およびプレビュー、共有設定を行うためのコンポーネントです。パブリックページビューとビルダービューの2系統に分かれます。
+- ビルダー画面: `frontend/src/app/(app)/portfolio/page.tsx`
+- 公開ページ: `frontend/src/app/portfolio/[slug]/page.tsx`
 
-- **`PortfolioBuilderPage` (管理画面側)**:
-  - **`components/ConfigSidebar`**: 左側（または下部）の設定パネル。表示項目（自己PRテキスト、ヒートマップウィジェット、特定タスクの成果物リンクなど）のトグル(ON/OFF) と、各種テキストの手動入力枠を持つ。
-  - **`components/LivePreviewPane`**: メイン画面のポートフォリオプレビュー。ConfigSidebarでの変更が即座に反映されるSPAライクな挙動（ReduxやZustandのStore同期）を実現するコンポーネント。
-  - **公開設定パネル**: トグルスイッチ（公開/非公開の切り替え）と、Slug（カスタムURL末尾）を編集・クリップボードへコピーできるUIを持つ。
+### 1.2. コンポーネント構成 (`frontend/src/features/portfolio/`)
 
-- **`PublicPortfolioPage` (公開側ルート `app/[slug]/page.tsx`)**:
-  非ログインユーザー（採用担当者等）が見る画面。取得した設定JSON（Drizzle）に合わせて、各種ウィジェットやサマリーのコンポーネントを描画する。
+- `ConfigSidebar`
+  - プロフィール、SNS、経歴ストーリー、スキル、サマリー選択、ロードマップ選択を編集する。
+- `LivePreviewPane`
+  - `PortfolioPublicView` を利用し、編集中の設定をリアルタイム表示する。
+- `PublishSettingsPanel`
+  - 保存ボタン、公開設定モーダル起動ボタンを提供する。
+- `PublishSettingsModal`
+  - Slug編集、公開/非公開トグル、公開URLコピーを提供する。
+- `PortfolioPublicView`
+  - 公開ページとプレビューで共通利用する表示コンポーネント。
+  - プロフィールタブ（経歴・スキル）とロードマップタブ（ロードマップ一覧/詳細 + サマリー）を表示する。
 
-### 1.2. 状態管理 (State Management)
+### 1.3. 状態管理
 
-- **ポートフォリオ設定構成 (Client-Side State):**
-  `PortfolioSettings` (例: `{ showHeatmap: true, summaryId: "abc", customSlug: "riku" }`) オブジェクトを `useState` または `Zustand` のストアで持ち、編集内容に応じて `LivePreviewPane` が即座にリアクティブレンダリングされる。
-- **DB保存トリガー (Hono RPC Mutation):**
-  設定内容の変更後、「保存（または公開）」ボタン押下時に設定JSONごとAPIへ `POST / PUT` する。
+- `usePortfolioBuilder` で以下を `useState` 管理する。
+  - `settings`
+  - `slug`
+  - `isPublic`
+  - `isLoading`
+  - `isSaving`
+- 初期表示時に `GET /api/portfolio` で既存設定を取得し、ローカル状態へ正規化して反映する。
+- 保存時は `POST /api/portfolio` を呼び出し、UPSERTする。
+- 公開ページは `usePublicPortfolio` で `GET /portfolio/public/:slug` をクライアント取得する。
+
+### 1.4. 設定データ構造 (`PortfolioSettings`)
+
+- `profile`
+  - `displayName`, `bio`, `avatarUrl`
+  - `socialLinks`（GitHub, X, Zenn, Qiita, AtCoder, Website）
+  - `careerStories[]`（id, title, organization, periodFrom, periodTo, isCurrent, story）
+  - `skills[]`
+- `sections`
+  - `summaryIds[]`
+  - `roadmapIds[]`
 
 ---
 
 ## 2. バックエンド・API設計 (Backend)
 
-### 2.1. API エンドポイント (Hono RPC)
+### 2.1. APIエンドポイント
 
-#### ① ポートフォリオ設定保存
+- `POST /api/portfolio`（JWT必須）
+  - ポートフォリオ設定を保存（UPSERT）
+- `GET /api/portfolio`（JWT必須）
+  - ログインユーザー自身の設定を取得
+- `GET /portfolio/public/:slug`（認証不要）
+  - 公開中ポートフォリオをSlugで取得
 
-- **エンドポイント:** `POST /api/portfolio`
-- **処理フロー:**
-  1.  ログインユーザーのIDに紐づく、フロントからのポートフォリオ設定（JSONB / Stringified JSON）と、Slug文字列を受け取る。
-  2.  指定されたSlugが既に他のユーザーに使われていないかバリデーション（一意性チェック）。
-  3.  `portfolios` テーブルにUPSERT（新規作成/更新）する。
+### 2.2. 保存処理フロー (`POST /api/portfolio`)
 
-#### ② 公開ポートフォリオ取得（非ログイン可）
+1. リクエストボディをZodで検証する（Slug形式、表示名、設定構造）。
+2. Slugの一意性を確認する（自分自身の更新は除外）。
+3. `portfolios` テーブルへユーザー単位でUPSERTする。
+4. 保存済み `portfolioId` を返却する。
 
-- **エンドポイント:** `GET /api/portfolio/public/:slug`
-- **処理フロー:**
-  1.  リクエストされたSlugと一致し、且つ `is_public == true` であるポートフォリオレコードを取得する。
-  2.  取得した設定JSON（例えばヒートマップ表示がON等）に基づき、必要な関連データ（`summaries` のテキストや `external_activities` の総計）をJOIN等のクエリでまとめて構築し、フロントエンドに返却する。
+### 2.3. 公開取得フロー (`GET /portfolio/public/:slug`)
 
-## 3. 将来拡張 (動的 OGP 画像生成機能)
+1. Slugでポートフォリオを取得する。
+2. レコード未存在は404、`isPublic = false` は403を返す。
+3. `settings.sections.summaryIds` / `roadmapIds` を読み取り、関連データを取得する。
+4. 返却値は `slug`, `settings`, `summaries`, `roadmaps`。
 
-本リリース時には見送りますが（MVP構築後）、以下の仕組みを設計上予約しておきます。
+補足:
+- 現在はID配列をもとにリポジトリへ個別取得を行い、`Promise.all` で並列化している。
+- JOINや外部活動データ統合は将来の最適化対象とする。
 
-- **Hono ルーティングと Vercel `@vercel/og` 連携:**
-  - `/api/og/:slug` のようなエンドポイントをHonoに用意。
-  - 特定のSlugに対応するサマリー内の重要テキスト（目標や、活動日数など）や、ヒートマップのSVG要素をバックエンドで生成・合成して画像（PNG）として返却するロジック（Satori等のライブラリを利用）。
-  - `app/[slug]/page.tsx` の Next.js メタデータ動的生成（`generateMetadata`）から、その画像URLを参照する。
+### 2.4. エラーハンドリング
+
+- 400: バリデーションエラー
+- 401: 認証情報不正
+- 403: 非公開ポートフォリオへのアクセス
+- 404: ポートフォリオ未存在
+- 409: Slug重複
+
+## 3. 将来拡張
+
+- 外部連携データウィジェット（ヒートマップ、言語グラフ、コミット集計）
+- ドラッグ＆ドロップ並び替え
+- LLMによるレイアウト提案
+- 期限付きURL、パスワード保護共有
+- CTA（面談申込/問い合わせ）導線
+- OGP画像動的生成（例: `/api/og/:slug`）と公開ページメタデータ連携

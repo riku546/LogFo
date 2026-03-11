@@ -87,7 +87,7 @@ const createTestRoadmapAndGetIds = async (
 /**
  * ヘルパー関数: テスト用の活動記録を作成する
  */
-const createTestActivityLog = async (
+const _createTestActivityLog = async (
   token: string,
   taskId: string,
   content: string,
