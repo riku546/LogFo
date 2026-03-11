@@ -21,7 +21,7 @@
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "hash-wasm": "^4.12.0",
-    "hono": "^4.12.5",
+    "hono": ">=4.12.7",
     "pdfjs-serverless": "^1.1.0",
     "workers-ai-provider": "^3.1.2",
     "zod": "^4.3.5"

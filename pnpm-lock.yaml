@@ -21,7 +21,7 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.7.6
-        version: 0.7.6(hono@4.12.5)(zod@4.3.5)
+        version: 0.7.6(hono@4.12.7)(zod@4.3.5)
       '@openrouter/ai-sdk-provider':
         specifier: ^2.2.3
         version: 2.2.3(ai@6.0.105(zod@4.3.5))(zod@4.3.5)
@@ -41,8 +41,8 @@ importers:
         specifier: ^4.12.0
         version: 4.12.0
       hono:
-        specifier: ^4.12.5
-        version: 4.12.5
+        specifier: '>=4.12.7'
+        version: 4.12.7
       pdfjs-serverless:
         specifier: ^1.1.0
         version: 1.1.0
@@ -102,8 +102,8 @@ importers:
         specifier: workspace:*
         version: link:../backend
       hono:
-        specifier: ^4.12.5
-        version: 4.12.5
+        specifier: '>=4.12.7'
+        version: 4.12.7
       lucide-react:
         specifier: ^0.576.0
         version: 0.576.0(react@19.2.3)
@@ -2943,8 +2943,8 @@ packages:
   hast-util-whitespace@3.0.0:
     resolution: {integrity: sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw==}
 
-  hono@4.12.5:
-    resolution: {integrity: sha512-3qq+FUBtlTHhtYxbxheZgY8NIFnkkC/MR8u5TTsr7YZ3wixryQ3cCwn3iZbg8p8B88iDBBAYSfZDS75t8MN7Vg==}
+  hono@4.12.7:
+    resolution: {integrity: sha512-jq9l1DM0zVIvsm3lv9Nw9nlJnMNPOcAtsbsgiUhWcFzPE99Gvo6yRTlszSLLYacMeQ6quHD6hMfId8crVHvexw==}
     engines: {node: '>=16.9.0'}
 
   html-url-attributes@3.0.1:
@@ -5336,9 +5336,9 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@hono/zod-validator@0.7.6(hono@4.12.5)(zod@4.3.5)':
+  '@hono/zod-validator@0.7.6(hono@4.12.7)(zod@4.3.5)':
     dependencies:
-      hono: 4.12.5
+      hono: 4.12.7
       zod: 4.3.5
 
   '@img/colour@1.0.0': {}
@@ -7189,7 +7189,7 @@ snapshots:
     dependencies:
       '@types/hast': 3.0.4
 
-  hono@4.12.5: {}
+  hono@4.12.7: {}
 
   html-url-attributes@3.0.1: {}
 
