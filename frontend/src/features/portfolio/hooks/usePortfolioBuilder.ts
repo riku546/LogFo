@@ -30,12 +30,47 @@ const createDefaultSettings = (): PortfolioSettings => ({
       atcoder: "",
       website: "",
     },
+    careerStories: [],
+    skills: [],
   },
   sections: {
     roadmapIds: [],
     summaryIds: [],
   },
 });
+
+/**
+ * 既存データをデフォルト値とマージして、未定義項目を補完する
+ *
+ * @param settings - APIから取得したポートフォリオ設定
+ * @returns 欠損項目を補完したポートフォリオ設定
+ */
+const normalizePortfolioSettings = (
+  settings: PortfolioSettings,
+): PortfolioSettings => {
+  const defaultSettings = createDefaultSettings();
+
+  return {
+    ...defaultSettings,
+    ...settings,
+    profile: {
+      ...defaultSettings.profile,
+      ...settings.profile,
+      socialLinks: {
+        ...defaultSettings.profile.socialLinks,
+        ...settings.profile.socialLinks,
+      },
+      careerStories: settings.profile.careerStories ?? [],
+      skills: settings.profile.skills ?? [],
+    },
+    sections: {
+      ...defaultSettings.sections,
+      ...settings.sections,
+      roadmapIds: settings.sections?.roadmapIds ?? [],
+      summaryIds: settings.sections?.summaryIds ?? [],
+    },
+  };
+};
 
 /**
  * ポートフォリオビルダーの状態管理・保存を行うカスタムフック
@@ -74,7 +109,7 @@ export const usePortfolioBuilder = () => {
         setSlug(existingPortfolio.slug);
         setIsPublic(existingPortfolio.isPublic);
         if (existingPortfolio.settings) {
-          setSettings(existingPortfolio.settings);
+          setSettings(normalizePortfolioSettings(existingPortfolio.settings));
         }
       }
     } catch (error) {

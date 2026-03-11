@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
 import { PublishSettingsModal } from "@/features/portfolio/components/PublishSettingsModal";
@@ -41,6 +41,26 @@ export default function PortfolioBuilderPage() {
     [],
   );
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+
+  const selectedRoadmaps = useMemo(() => {
+    const roadmapById = new Map(
+      availableRoadmaps.map((roadmap) => [roadmap.id, roadmap]),
+    );
+
+    return settings.sections.roadmapIds
+      .map((roadmapId) => roadmapById.get(roadmapId))
+      .filter((roadmap): roadmap is RoadmapListItem => roadmap !== undefined);
+  }, [availableRoadmaps, settings.sections.roadmapIds]);
+
+  const selectedSummaries = useMemo(() => {
+    const summaryById = new Map(
+      availableSummaries.map((summary) => [summary.id, summary]),
+    );
+
+    return settings.sections.summaryIds
+      .map((summaryId) => summaryById.get(summaryId))
+      .filter((summary): summary is SummaryItem => summary !== undefined);
+  }, [availableSummaries, settings.sections.summaryIds]);
 
   /**
    * 選択可能なロードマップとサマリーを読み込む
@@ -87,7 +107,9 @@ export default function PortfolioBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="relative flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+        <div className="absolute top-10 left-10 h-44 w-44 rounded-full bg-blue-400/15 blur-3xl" />
+        <div className="absolute bottom-0 right-10 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl" />
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -99,9 +121,12 @@ export default function PortfolioBuilderPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="relative flex flex-col h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-900 overflow-hidden">
+      <div className="absolute top-12 left-8 h-56 w-56 rounded-full bg-blue-400/15 blur-3xl" />
+      <div className="absolute -bottom-10 right-10 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+
       {/* メインコンテンツ: サイドバー + プレビュー */}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+      <div className="relative flex flex-col lg:flex-row flex-1 min-h-0">
         <ConfigSidebar
           settings={settings}
           onUpdateProfile={updateProfile}
@@ -110,7 +135,11 @@ export default function PortfolioBuilderPage() {
           availableSummaries={availableSummaries}
           availableRoadmaps={availableRoadmaps}
         />
-        <LivePreviewPane settings={settings} />
+        <LivePreviewPane
+          settings={settings}
+          summaries={selectedSummaries}
+          roadmaps={selectedRoadmaps}
+        />
       </div>
 
       {/* 下部: アクションバー */}

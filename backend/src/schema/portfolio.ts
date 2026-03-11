@@ -15,6 +15,19 @@ export const socialLinksSchema = z.object({
 });
 
 /**
+ * 経歴ストーリーのスキーマ
+ */
+export const careerStorySchema = z.object({
+  id: z.string().min(1),
+  title: z.string().optional().default(""),
+  organization: z.string().optional().default(""),
+  periodFrom: z.string().optional().default(""),
+  periodTo: z.string().optional().default(""),
+  isCurrent: z.boolean().optional().default(false),
+  story: z.string().optional().default(""),
+});
+
+/**
  * プロフィール設定スキーマ（常に表示される）
  */
 export const profileSettingsSchema = z.object({
@@ -22,6 +35,8 @@ export const profileSettingsSchema = z.object({
   bio: z.string().optional().default(""),
   avatarUrl: z.string().url().optional().or(z.literal("")),
   socialLinks: socialLinksSchema.optional().default({}),
+  careerStories: z.array(careerStorySchema).optional().default([]),
+  skills: z.array(z.string()).optional().default([]),
 });
 
 /**

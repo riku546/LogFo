@@ -38,6 +38,18 @@ const createTestSettings = (overrides = {}) => ({
       x: "",
       website: "",
     },
+    careerStories: [
+      {
+        id: "career-1",
+        title: "Frontend Engineer",
+        organization: "LogFo",
+        periodFrom: "2024-04",
+        periodTo: "2025-12",
+        isCurrent: false,
+        story: "UI改善と設計を担当",
+      },
+    ],
+    skills: ["React", "TypeScript"],
   },
   sections: {
     roadmapIds: [],
@@ -228,10 +240,30 @@ describe("Portfolio API Integration Test", () => {
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
-        portfolio: { slug: string; isPublic: boolean };
+        portfolio: {
+          slug: string;
+          isPublic: boolean;
+          settings: {
+            profile: {
+              careerStories: Array<{ id: string; title: string }>;
+              skills: string[];
+            };
+          };
+        };
       };
       expect(body.portfolio.slug).toBe("get-test");
       expect(body.portfolio.isPublic).toBe(false);
+      expect(body.portfolio.settings.profile.careerStories).toHaveLength(1);
+      expect(body.portfolio.settings.profile.careerStories[0].id).toBe(
+        "career-1",
+      );
+      expect(body.portfolio.settings.profile.careerStories[0].title).toBe(
+        "Frontend Engineer",
+      );
+      expect(body.portfolio.settings.profile.skills).toEqual([
+        "React",
+        "TypeScript",
+      ]);
     });
 
     it("return 404 when no portfolio exists", async () => {
@@ -271,10 +303,25 @@ describe("Portfolio API Integration Test", () => {
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
-        portfolio: { slug: string; settings: unknown };
+        portfolio: {
+          slug: string;
+          settings: {
+            profile: {
+              careerStories: Array<{ id: string }>;
+              skills: string[];
+            };
+          };
+        };
       };
       expect(body.portfolio.slug).toBe("public-test");
       expect(body.portfolio.settings).toBeDefined();
+      expect(body.portfolio.settings.profile.careerStories[0].id).toBe(
+        "career-1",
+      );
+      expect(body.portfolio.settings.profile.skills).toEqual([
+        "React",
+        "TypeScript",
+      ]);
     });
 
     it("return 403 when portfolio is not public", async () => {

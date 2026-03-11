@@ -20,11 +20,23 @@ export interface SocialLinks {
   website?: string;
 }
 
+export interface CareerStory {
+  id: string;
+  title: string;
+  organization: string;
+  periodFrom: string;
+  periodTo?: string;
+  isCurrent: boolean;
+  story: string;
+}
+
 export interface ProfileSettings {
   displayName: string;
   bio?: string;
   avatarUrl?: string;
   socialLinks?: SocialLinks;
+  careerStories: CareerStory[];
+  skills: string[];
 }
 
 export interface SectionSettings {
