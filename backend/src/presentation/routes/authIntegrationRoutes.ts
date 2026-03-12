@@ -7,6 +7,13 @@ import { getUserIdFromJwt, readJson } from "../../lib/readJson";
 
 export const createAuthIntegrationRoutes = () => {
   const router = new Hono<{ Bindings: Env }>()
+    .get("/session", async (c) => {
+      const userId = getUserIdFromJwt(c);
+      return c.json({
+        isAuthenticated: true,
+        userId,
+      });
+    })
 
     .get("/status", async (c) => {
       const userId = getUserIdFromJwt(c);
