@@ -246,7 +246,7 @@ export const portfolios = sqliteTable("portfolios", {
   isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
   // どのサマリ・ウィジェットを表示するかのJSON設定
   // スキル、経歴も格納している(今後の要件に応じて、テーブルに切り出すかを検討)
-  settings: text("settings", { mode: "json" }), 
+  settings: text("settings", { mode: "json" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
