@@ -1,9 +1,25 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as dashboardApi from "../../../src/features/dashboard/api/dashboardComponents";
 import { IntegrationSyncPanel } from "../../../src/features/dashboard/components/IntegrationSyncPanel";
+
+vi.mock("../../../src/features/dashboard/api/dashboardComponents", () => ({
+  fetchIntegrationRedirectUrl: vi.fn().mockResolvedValue("https://example.com"),
+  useGetIntegrationStatusQuery: vi.fn(() => ({
+    data: {
+      integrations: [],
+    },
+  })),
+  useSyncExternalData: vi.fn(() => ({
+    syncData: vi.fn(),
+  })),
+}));
 
 describe("IntegrationSyncPanel", () => {
   let originalWindowLocation: Location;
+  const mockedFetchIntegrationRedirectUrl = vi.mocked(
+    dashboardApi.fetchIntegrationRedirectUrl,
+  );
 
   beforeEach(() => {
     // location のモック（location.href 代入時のエラー回避）
@@ -17,15 +33,7 @@ describe("IntegrationSyncPanel", () => {
         href: "http://localhost/",
       },
     });
-
-    // fetch のモック
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ redirectUrl: "https://example.com" }),
-      }),
-    );
+    mockedFetchIntegrationRedirectUrl.mockResolvedValue("https://example.com");
 
     // localStorage のモック
     Object.defineProperty(window, "localStorage", {
@@ -59,8 +67,11 @@ describe("IntegrationSyncPanel", () => {
     await waitFor(() => {
       // 遷移中状態になること
       expect(firstSyncBtn).toBeDisabled();
-      // APIが呼ばれたこと
-      expect(global.fetch).toHaveBeenCalled();
+      // API関数が呼ばれたこと
+      expect(mockedFetchIntegrationRedirectUrl).toHaveBeenCalledWith(
+        "mock-token",
+        "github",
+      );
       // location.href が書き換わっていること
       expect(window.location.href).toBe("https://example.com");
     });

@@ -1,6 +1,6 @@
 import useSWR, { useSWRConfig } from "swr";
+import { client } from "@/lib/client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 type DashboardError = { message?: string };
 type ProviderWidgetsResponse = {
   widgetsData: Record<
@@ -25,6 +25,15 @@ type IntegrationStatusResponse = {
 };
 type SyncResponse = { message: string; syncedItemsCount: number };
 type UnauthorizedError = Error & { status: number; provider: string };
+/**
+ * 外部サービス連携で扱うプロバイダーID
+ */
+export type IntegrationProvider =
+  | "github"
+  | "wakatime"
+  | "qiita"
+  | "zenn"
+  | "atcoder";
 
 const createUnauthorizedError = (
   provider: string,
@@ -62,24 +71,9 @@ const toProviderError = (value: unknown): { provider?: string } => {
   return {};
 };
 
-/**
- * 汎用的な fetcher
- */
-const fetcher = async <T>([url, token, _key]: [string, string, string]) => {
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) {
-    const errorInfo = toDashboardError(await res.json().catch(() => ({})));
-    throw new Error(
-      errorInfo.message || "An error occurred while fetching the data.",
-    );
-  }
-  const data: T = await res.json();
-  return data;
-};
+const getAuthorizationHeader = (token: string) => ({
+  Authorization: `Bearer ${token}`,
+});
 
 /**
  * クライアントサイドでのみトークンを取得する簡易フック
@@ -96,11 +90,29 @@ const useToken = () => {
  */
 export const useGetProviderWidgetsQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/dashboard/provider-widgets`;
 
   const { data, error, isLoading, mutate } = useSWR<ProviderWidgetsResponse>(
-    token ? [url, token, "dashboard-provider-widgets"] : null,
-    fetcher,
+    token ? ["dashboard-provider-widgets", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.dashboard["provider-widgets"].$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: ProviderWidgetsResponse = await response.json();
+      return data;
+    },
   );
 
   return {
@@ -116,11 +128,29 @@ export const useGetProviderWidgetsQuery = () => {
  */
 export const useGetDashboardStatsQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/dashboard/stats`;
 
   const { data, error, isLoading, mutate } = useSWR<DashboardStatsResponse>(
-    token ? [url, token, "dashboard-stats"] : null,
-    fetcher,
+    token ? ["dashboard-stats", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.dashboard.stats.$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: DashboardStatsResponse = await response.json();
+      return data;
+    },
   );
 
   return {
@@ -136,11 +166,29 @@ export const useGetDashboardStatsQuery = () => {
  */
 export const useGetIntegrationStatusQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/auth/status`;
 
   const { data, error, isLoading, mutate } = useSWR<IntegrationStatusResponse>(
-    token ? [url, token, "integration-status"] : null,
-    fetcher,
+    token ? ["integration-status", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.auth.status.$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: IntegrationStatusResponse = await response.json();
+      return data;
+    },
   );
 
   return {
@@ -152,22 +200,48 @@ export const useGetIntegrationStatusQuery = () => {
 };
 
 /**
+ * OAuth連携開始用のリダイレクトURLを取得する
+ */
+export const fetchIntegrationRedirectUrl = async (
+  token: string,
+  provider: string,
+): Promise<string> => {
+  const response = await client.api.auth[":provider"].$get(
+    {
+      param: { provider },
+    },
+    { headers: getAuthorizationHeader(token) },
+  );
+
+  if (!response.ok) {
+    const errorData = toDashboardError(await response.json().catch(() => ({})));
+    throw new Error(errorData.message || "Failed to get authorization url");
+  }
+
+  const data: { redirectUrl?: string } = await response.json();
+  if (!data.redirectUrl) {
+    throw new Error("Failed to get authorization url");
+  }
+
+  return data.redirectUrl;
+};
+
+/**
  * 手動同期を実行するフック（SWR の mutate を使用して関連キャッシュを破棄）
  */
 export const useSyncExternalData = () => {
   const token = useToken();
   const { mutate } = useSWRConfig();
 
-  const syncData = async (provider: string) => {
+  const syncData = async (provider: IntegrationProvider) => {
     if (!token) throw new Error("Unauthorized");
 
-    const response = await fetch(`${API_URL}/api/dashboard/sync/${provider}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await client.api.dashboard.sync[":provider"].$post(
+      {
+        param: { provider },
       },
-    });
+      { headers: getAuthorizationHeader(token) },
+    );
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -179,15 +253,15 @@ export const useSyncExternalData = () => {
       throw new Error(`Failed to sync ${provider}`);
     }
 
-    const data: SyncResponse = await response.json();
+    const data = (await response.json()) as SyncResponse;
 
     // SWR キャッシュを破棄して再フェッチを促す
-    // mutate は キーを条件に破棄できる。配列の第3要素に "dashboard-provider-widgets" などを入れる
+    // mutate はキーを条件に破棄できる
     await mutate(
       (key) =>
         Array.isArray(key) &&
-        (key.includes("dashboard-provider-widgets") ||
-          key.includes("dashboard-stats")),
+        (key[0] === "dashboard-provider-widgets" ||
+          key[0] === "dashboard-stats"),
       undefined,
       { revalidate: true },
     );

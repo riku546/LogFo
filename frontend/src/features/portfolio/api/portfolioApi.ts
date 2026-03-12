@@ -1,3 +1,5 @@
+import { client } from "@/lib/client";
+
 /**
  * ポートフォリオ機能に関するAPI通信ユーティリティ
  *
@@ -6,8 +8,6 @@
  * const portfolioId = await savePortfolio(token, payload);
  * const publicData = await fetchPublicPortfolio("riku");
  */
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
 // ===== 型定義 =====
 
@@ -114,9 +114,10 @@ const getHeaders = (token: string, includeContentType = true) => {
 export const fetchMyPortfolio = async (
   token: string,
 ): Promise<PortfolioData | null> => {
-  const response = await fetch(`${API_URL}/api/portfolio`, {
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.portfolio.$get(
+    {},
+    { headers: getHeaders(token, false) },
+  );
 
   if (response.status === 404) {
     return null;
@@ -140,11 +141,12 @@ export const savePortfolio = async (
   token: string,
   payload: SavePortfolioPayload,
 ): Promise<string> => {
-  const response = await fetch(`${API_URL}/api/portfolio`, {
-    method: "POST",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.portfolio.$post(
+    {
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (response.status === 409) {
     throw new PortfolioApiError(
@@ -160,7 +162,7 @@ export const savePortfolio = async (
     );
   }
 
-  const body: { portfolioId: string } = await response.json();
+  const body = (await response.json()) as { portfolioId: string };
   return body.portfolioId;
 };
 
@@ -170,7 +172,9 @@ export const savePortfolio = async (
 export const fetchPublicPortfolio = async (
   slug: string,
 ): Promise<PublicPortfolioData> => {
-  const response = await fetch(`${API_URL}/portfolio/public/${slug}`);
+  const response = await client.portfolio.public[":slug"].$get({
+    param: { slug },
+  });
 
   if (response.status === 404) {
     throw new PortfolioApiError(
@@ -193,6 +197,6 @@ export const fetchPublicPortfolio = async (
     );
   }
 
-  const body: { portfolio: PublicPortfolioData } = await response.json();
+  const body = (await response.json()) as { portfolio: PublicPortfolioData };
   return body.portfolio;
 };

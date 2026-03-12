@@ -42,7 +42,7 @@ const createPayload = (): SavePortfolioPayload => ({
 });
 
 describe("portfolioApi.savePortfolio", () => {
-  const parseRequestBody = (value: BodyInit | null | undefined) => {
+  const parseRequestBody = (value: string) => {
     const requestBodySchema = z.object({
       settings: z.object({
         profile: z.object({
@@ -53,10 +53,6 @@ describe("portfolioApi.savePortfolio", () => {
         }),
       }),
     });
-    if (typeof value !== "string") {
-      throw new Error("request body is not string");
-    }
-
     const parsed: unknown = JSON.parse(value);
     const validated = requestBodySchema.safeParse(parsed);
     if (!validated.success) {
@@ -64,6 +60,19 @@ describe("portfolioApi.savePortfolio", () => {
     }
 
     return validated.data;
+  };
+
+  const extractRequestBody = async (
+    input: RequestInfo | URL | undefined,
+    init: RequestInit | undefined,
+  ): Promise<string> => {
+    if (typeof init?.body === "string") {
+      return init.body;
+    }
+    if (input instanceof Request) {
+      return input.clone().text();
+    }
+    throw new Error("request body is not string");
   };
 
   it("careerStoriesとskillsをPOST payloadへ含める", async () => {
@@ -83,7 +92,8 @@ describe("portfolioApi.savePortfolio", () => {
 
     const fetchMock = vi.mocked(fetch);
     const call = fetchMock.mock.calls[0];
-    const requestBody = parseRequestBody(call?.[1]?.body);
+    const requestBodyRaw = await extractRequestBody(call?.[0], call?.[1]);
+    const requestBody = parseRequestBody(requestBodyRaw);
 
     expect(requestBody.settings.profile.careerStories[0]).toMatchObject({
       id: "career-1",
