@@ -5,8 +5,7 @@
  * const logs = await fetchActivityLogs(token, taskId);
  * const { activityLogId } = await createActivityLog(token, payload);
  */
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+import { client } from "@/lib/client";
 
 // ===== 型定義 =====
 
@@ -59,17 +58,20 @@ export const fetchActivityLogs = async (
   token: string,
   taskId: string,
 ): Promise<ActivityLogItem[]> => {
-  const response = await fetch(`${API_URL}/api/activities/${taskId}`, {
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.activities[":taskId"].$get(
+    {
+      param: { taskId },
+    },
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new ActivityApiError("活動記録の取得に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as {
+  const body: {
     activityLogs: ActivityLogItem[];
-  };
+  } = await response.json();
   return body.activityLogs;
 };
 
@@ -80,11 +82,12 @@ export const createActivityLog = async (
   token: string,
   payload: CreateActivityLogPayload,
 ): Promise<string> => {
-  const response = await fetch(`${API_URL}/api/activities`, {
-    method: "POST",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.activities.$post(
+    {
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new ActivityApiError("活動記録の保存に失敗しました", response.status);
@@ -102,11 +105,13 @@ export const updateActivityLog = async (
   activityId: string,
   content: string,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/activities/${activityId}`, {
-    method: "PUT",
-    headers: getHeaders(token),
-    body: JSON.stringify({ content }),
-  });
+  const response = await client.api.activities[":activityId"].$put(
+    {
+      param: { activityId },
+      json: { content },
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new ActivityApiError("活動記録の更新に失敗しました", response.status);
@@ -120,10 +125,12 @@ export const deleteActivityLog = async (
   token: string,
   activityId: string,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/activities/${activityId}`, {
-    method: "DELETE",
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.activities[":activityId"].$delete(
+    {
+      param: { activityId },
+    },
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new ActivityApiError("活動記録の削除に失敗しました", response.status);

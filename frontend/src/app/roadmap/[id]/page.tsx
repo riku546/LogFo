@@ -10,7 +10,8 @@ import { useRoadmapDetail } from "@/features/roadmap/hooks/useRoadmapDetail";
 export default function RoadmapDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const roadmapId = params.id as string;
+  const roadmapId =
+    typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
   const {
     roadmap,

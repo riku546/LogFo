@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   type SaveSummaryPayload,
   type SummaryFormat,
@@ -62,8 +63,8 @@ export const useSummaryGenerate = () => {
     console.error(error);
     if (
       error instanceof Error &&
-      "statusCode" in error &&
-      (error as { statusCode: number }).statusCode === 404
+      isStatusCodeError(error) &&
+      error.statusCode === 404
     ) {
       toast.error(
         "選択したマイルストーンに活動記録がありません。先に活動を記録してください。",
@@ -204,3 +205,6 @@ export const useSummaryGenerate = () => {
     handleReset,
   };
 };
+const statusCodeErrorSchema = z.object({ statusCode: z.number() });
+const isStatusCodeError = (error: unknown): error is { statusCode: number } =>
+  statusCodeErrorSchema.safeParse(error).success;

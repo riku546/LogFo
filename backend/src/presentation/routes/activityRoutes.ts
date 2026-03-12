@@ -4,17 +4,18 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { CreateActivityLogUsecase } from "../../core/application/usecases/createActivityLogUsecase";
-import { DeleteActivityLogUsecase } from "../../core/application/usecases/deleteActivityLogUsecase";
+import { CreateActivityLogUsecase } from "../../core/application/usecases/activity/createActivityLogUsecase";
+import { DeleteActivityLogUsecase } from "../../core/application/usecases/activity/deleteActivityLogUsecase";
 import {
   ActivityLogAccessDeniedError,
   ActivityLogNotFoundError,
   GetActivityLogsUsecase,
-} from "../../core/application/usecases/getActivityLogsUsecase";
-import { UpdateActivityLogUsecase } from "../../core/application/usecases/updateActivityLogUsecase";
+} from "../../core/application/usecases/activity/getActivityLogsUsecase";
+import { UpdateActivityLogUsecase } from "../../core/application/usecases/activity/updateActivityLogUsecase";
 import { tasks } from "../../infrastructure/database/schema";
 import { DrizzleActivityLogRepository } from "../../infrastructure/repositories/drizzleActivityLogRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
+import { getUserIdFromJwt } from "../../lib/readJson";
 import {
   createActivityLogRequestSchema,
   updateActivityLogRequestSchema,
@@ -32,21 +33,6 @@ const handleDomainError = (error: unknown): never => {
     throw new HTTPException(403, { message: error.message });
   }
   throw error;
-};
-
-/**
- * JWTペイロードからユーザーIDを取得するヘルパー関数
- *
- * @param c - Honoのコンテキスト
- * @returns ユーザーID
- * @throws {HTTPException} JWTペイロードにユーザーIDがない場合
- */
-const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
-  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
-  if (!jwtPayload?.sub) {
-    throw new HTTPException(401, { message: "Invalid token" });
-  }
-  return jwtPayload.sub;
 };
 
 /**

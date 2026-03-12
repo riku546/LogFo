@@ -47,7 +47,7 @@ export class DrizzleActivityLogRepository implements ActivityLogRepository {
       .where(eq(activityLogs.taskId, taskId))
       .orderBy(desc(activityLogs.loggedDate), desc(activityLogs.createdAt));
 
-    return rows as ActivityLog[];
+    return rows;
   }
 
   /**
@@ -65,7 +65,7 @@ export class DrizzleActivityLogRepository implements ActivityLogRepository {
     const row = rows[0];
     if (!row) return undefined;
 
-    return row as ActivityLog;
+    return row;
   }
 
   /**
@@ -135,6 +135,6 @@ export class DrizzleActivityLogRepository implements ActivityLogRepository {
       .where(inArray(activityLogs.taskId, taskIds))
       .orderBy(activityLogs.loggedDate, activityLogs.createdAt);
 
-    return rows as ActivityLog[];
+    return rows;
   }
 }

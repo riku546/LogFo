@@ -4,19 +4,20 @@ import { streamObject } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { DeleteRoadmapUsecase } from "../../core/application/usecases/deleteRoadmapUsecase";
+import { DeleteRoadmapUsecase } from "../../core/application/usecases/roadmap/deleteRoadmapUsecase";
 import {
   GetRoadmapUsecase,
   RoadmapAccessDeniedError,
   RoadmapNotFoundError,
-} from "../../core/application/usecases/getRoadmapUsecase";
-import { SaveRoadmapUsecase } from "../../core/application/usecases/saveRoadmapUsecase";
-import { UpdateRoadmapUsecase } from "../../core/application/usecases/updateRoadmapUsecase";
+} from "../../core/application/usecases/roadmap/getRoadmapUsecase";
+import { SaveRoadmapUsecase } from "../../core/application/usecases/roadmap/saveRoadmapUsecase";
+import { UpdateRoadmapUsecase } from "../../core/application/usecases/roadmap/updateRoadmapUsecase";
 import { getRoadmapLLM } from "../../infrastructure/ai/llmProvider";
 import { buildRoadmapSystemPrompt } from "../../infrastructure/ai/prompts/roadmapSystemPrompt";
 import { extractPdfText } from "../../infrastructure/pdf/pdfParser";
 import { DrizzleRoadmapRepository } from "../../infrastructure/repositories/drizzleRoadmapRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
+import { getUserIdFromJwt } from "../../lib/readJson";
 import {
   generateRoadmapRequestSchema,
   saveRoadmapRequestSchema,
@@ -44,14 +45,6 @@ const handleDomainError = (error: unknown): never => {
  * @returns ユーザーID
  * @throws {HTTPException} JWTペイロードにユーザーIDがない場合
  */
-const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
-  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
-  if (!jwtPayload?.sub) {
-    throw new HTTPException(401, { message: "Invalid token" });
-  }
-  return jwtPayload.sub;
-};
-
 /**
  * ロードマップ関連のHonoルーティングを生成するファクトリ関数
  *

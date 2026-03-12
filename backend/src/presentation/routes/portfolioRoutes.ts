@@ -3,20 +3,21 @@ import { zValidator } from "@hono/zod-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { GetPortfolioUsecase } from "../../core/application/usecases/getPortfolioUsecase";
+import { GetPortfolioUsecase } from "../../core/application/usecases/portfolio/getPortfolioUsecase";
 import {
   GetPublicPortfolioUsecase,
   PortfolioNotFoundError,
   PortfolioNotPublicError,
-} from "../../core/application/usecases/getPublicPortfolioUsecase";
+} from "../../core/application/usecases/portfolio/getPublicPortfolioUsecase";
 import {
   SavePortfolioUsecase,
   SlugAlreadyTakenError,
-} from "../../core/application/usecases/savePortfolioUsecase";
+} from "../../core/application/usecases/portfolio/savePortfolioUsecase";
 import { DrizzlePortfolioRepository } from "../../infrastructure/repositories/drizzlePortfolioRepository";
 import { DrizzleRoadmapRepository } from "../../infrastructure/repositories/drizzleRoadmapRepository";
 import { DrizzleSummaryRepository } from "../../infrastructure/repositories/drizzleSummaryRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
+import { getUserIdFromJwt } from "../../lib/readJson";
 import { savePortfolioRequestSchema } from "../../schema/portfolio";
 
 /**
@@ -42,14 +43,6 @@ const handleDomainError = (error: unknown): never => {
  * @returns ユーザーID
  * @throws {HTTPException} JWTペイロードにユーザーIDがない場合
  */
-const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
-  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
-  if (!jwtPayload?.sub) {
-    throw new HTTPException(401, { message: "Invalid token" });
-  }
-  return jwtPayload.sub;
-};
-
 /**
  * ポートフォリオ関連のHonoルーティングを生成するファクトリ関数（JWT認証必須ルート）
  *

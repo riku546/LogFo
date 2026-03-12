@@ -4,23 +4,24 @@ import { streamText } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { DeleteSummaryUsecase } from "../../core/application/usecases/deleteSummaryUsecase";
+import { DeleteSummaryUsecase } from "../../core/application/usecases/summary/deleteSummaryUsecase";
 import {
   GenerateSummaryUsecase,
   NoActivityLogsError,
-} from "../../core/application/usecases/generateSummaryUsecase";
+} from "../../core/application/usecases/summary/generateSummaryUsecase";
 import {
   GetSummariesUsecase,
   SummaryAccessDeniedError,
   SummaryNotFoundError,
-} from "../../core/application/usecases/getSummariesUsecase";
-import { SaveSummaryUsecase } from "../../core/application/usecases/saveSummaryUsecase";
-import { UpdateSummaryUsecase } from "../../core/application/usecases/updateSummaryUsecase";
+} from "../../core/application/usecases/summary/getSummariesUsecase";
+import { SaveSummaryUsecase } from "../../core/application/usecases/summary/saveSummaryUsecase";
+import { UpdateSummaryUsecase } from "../../core/application/usecases/summary/updateSummaryUsecase";
 import { getSummaryLLM } from "../../infrastructure/ai/llmProvider";
 import { buildSummarySystemPrompt } from "../../infrastructure/ai/prompts/summarySystemPrompt";
 import { DrizzleActivityLogRepository } from "../../infrastructure/repositories/drizzleActivityLogRepository";
 import { DrizzleSummaryRepository } from "../../infrastructure/repositories/drizzleSummaryRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
+import { getUserIdFromJwt } from "../../lib/readJson";
 import {
   generateSummaryRequestSchema,
   saveSummaryRequestSchema,
@@ -50,14 +51,6 @@ const handleDomainError = (error: unknown): never => {
  * @returns ユーザーID
  * @throws {HTTPException} JWTペイロードにユーザーIDがない場合
  */
-const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
-  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
-  if (!jwtPayload?.sub) {
-    throw new HTTPException(401, { message: "Invalid token" });
-  }
-  return jwtPayload.sub;
-};
-
 /**
  * サマリー関連のHonoルーティングを生成するファクトリ関数
  *

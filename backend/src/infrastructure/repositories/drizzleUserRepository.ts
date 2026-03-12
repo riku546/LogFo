@@ -23,7 +23,7 @@ export class DrizzleUserRepository implements UserRepository {
       .from(users)
       .where(eq(users.email, email));
 
-    return results[0] as User | undefined;
+    return results[0];
   }
 
   /**

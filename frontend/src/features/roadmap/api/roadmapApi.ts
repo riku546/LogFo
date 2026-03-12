@@ -1,3 +1,5 @@
+import { client } from "@/lib/client";
+
 /**
  * ロードマップ機能に関するAPI通信ユーティリティ
  *
@@ -74,13 +76,13 @@ export interface UpdateRoadmapPayload {
     id?: string;
     title: string;
     description: string | null;
-    status: string;
+    status: "TODO" | "IN_PROGRESS" | "DONE";
     orderIndex: number;
     tasks: Array<{
       id?: string;
       title: string;
       estimatedHours: number | null;
-      status: string;
+      status: "TODO" | "IN_PROGRESS" | "DONE";
       orderIndex: number;
     }>;
   }>;
@@ -110,6 +112,18 @@ const getHeaders = (token: string, includeContentType = true) => {
   return headers;
 };
 
+const normalizeSaveRoadmapPayload = (payload: SaveRoadmapPayload) => ({
+  ...payload,
+  milestones: payload.milestones.map((milestone) => ({
+    ...milestone,
+    description: milestone.description ?? null,
+    tasks: milestone.tasks.map((task) => ({
+      ...task,
+      estimatedHours: task.estimatedHours ?? null,
+    })),
+  })),
+});
+
 // ===== API関数 =====
 
 /**
@@ -118,9 +132,10 @@ const getHeaders = (token: string, includeContentType = true) => {
 export const fetchRoadmapList = async (
   token: string,
 ): Promise<RoadmapListItem[]> => {
-  const response = await fetch(`${API_URL}/api/roadmap`, {
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.roadmap.$get(
+    {},
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new RoadmapApiError(
@@ -129,7 +144,7 @@ export const fetchRoadmapList = async (
     );
   }
 
-  const body = (await response.json()) as { roadmaps: RoadmapListItem[] };
+  const body: { roadmaps: RoadmapListItem[] } = await response.json();
   return body.roadmaps;
 };
 
@@ -140,9 +155,12 @@ export const fetchRoadmapDetail = async (
   token: string,
   roadmapId: string,
 ): Promise<RoadmapDetail> => {
-  const response = await fetch(`${API_URL}/api/roadmap/${roadmapId}`, {
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.roadmap[":id"].$get(
+    {
+      param: { id: roadmapId },
+    },
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new RoadmapApiError(
@@ -162,11 +180,12 @@ export const saveRoadmap = async (
   token: string,
   payload: SaveRoadmapPayload,
 ): Promise<string> => {
-  const response = await fetch(`${API_URL}/api/roadmap`, {
-    method: "POST",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.roadmap.$post(
+    {
+      json: normalizeSaveRoadmapPayload(payload),
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new RoadmapApiError("保存に失敗しました", response.status);
@@ -184,11 +203,13 @@ export const updateRoadmap = async (
   roadmapId: string,
   payload: UpdateRoadmapPayload,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/roadmap/${roadmapId}`, {
-    method: "PUT",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.roadmap[":id"].$put(
+    {
+      param: { id: roadmapId },
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new RoadmapApiError("更新に失敗しました", response.status);
@@ -202,10 +223,12 @@ export const deleteRoadmap = async (
   token: string,
   roadmapId: string,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/roadmap/${roadmapId}`, {
-    method: "DELETE",
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.roadmap[":id"].$delete(
+    {
+      param: { id: roadmapId },
+    },
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new RoadmapApiError("削除に失敗しました", response.status);

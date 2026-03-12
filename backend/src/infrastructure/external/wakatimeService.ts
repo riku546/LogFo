@@ -1,4 +1,5 @@
 import { IntegrationUnauthorizedError } from "../../core/application/errors/integrationError";
+import { readJson } from "../../lib/readJson";
 
 export interface WakatimeSummary {
   date: string;
@@ -32,7 +33,7 @@ export class WakatimeService {
       throw new Error(`WakaTime API Error: ${response.status} ${errorText}`);
     }
 
-    const json = (await response.json()) as {
+    const json = await readJson<{
       data: Array<{
         grand_total: {
           total_seconds: number;
@@ -41,7 +42,7 @@ export class WakatimeService {
           date: string;
         };
       }>;
-    };
+    }>(response);
 
     return json.data.map((day) => ({
       date: day.range.date,

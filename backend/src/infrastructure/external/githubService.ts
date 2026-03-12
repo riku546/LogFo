@@ -1,4 +1,5 @@
 import { IntegrationUnauthorizedError } from "../../core/application/errors/integrationError";
+import { readJson } from "../../lib/readJson";
 
 export interface GithubContributionDay {
   date: string;
@@ -55,7 +56,7 @@ export class GithubService {
       );
     }
 
-    const json = (await response.json()) as {
+    const json = await readJson<{
       data?: {
         user?: {
           contributionsCollection?: {
@@ -70,8 +71,8 @@ export class GithubService {
           };
         };
       };
-      errors?: any[];
-    };
+      errors?: unknown[];
+    }>(response);
     if (json.errors) {
       throw new Error(`GitHub GraphQL Error: ${JSON.stringify(json.errors)}`);
     }

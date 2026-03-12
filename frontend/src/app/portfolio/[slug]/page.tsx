@@ -10,7 +10,8 @@ import { usePublicPortfolio } from "@/features/portfolio/hooks/usePublicPortfoli
  */
 export default function PublicPortfolioPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug =
+    typeof params.slug === "string" ? params.slug : (params.slug?.[0] ?? "");
   const { portfolioData, isLoading, error } = usePublicPortfolio(slug);
 
   if (isLoading) {

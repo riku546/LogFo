@@ -57,9 +57,8 @@ export const useRoadmapDetail = (roadmapId: string) => {
   // 編集モード開始
   const startEditing = useCallback(() => {
     if (!roadmap) return;
-    setEditMilestones(
-      JSON.parse(JSON.stringify(roadmap.milestones)) as RoadmapMilestone[],
-    );
+    const milestones: RoadmapMilestone[] = structuredClone(roadmap.milestones);
+    setEditMilestones(milestones);
     setIsEditing(true);
   }, [roadmap]);
 

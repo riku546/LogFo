@@ -3,8 +3,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sign } from "hono/jwt";
-import { SigninUsecase } from "../../core/application/usecases/signinUsecase";
-import { SignupUsecase } from "../../core/application/usecases/signupUsecase";
+import { SigninUsecase } from "../../core/application/usecases/auth/signinUsecase";
+import { SignupUsecase } from "../../core/application/usecases/auth/signupUsecase";
 import {
   EmailAlreadyInUseError,
   InvalidPasswordError,

@@ -1,26 +1,79 @@
 import useSWR, { useSWRConfig } from "swr";
+import { client } from "@/lib/client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-
-/**
- * 汎用的な fetcher
- */
-const fetcher = async ([url, token, _key]: [string, string, string]) => {
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) {
-    const errorInfo = (await res.json().catch(() => ({}))) as {
-      message?: string;
-    };
-    throw new Error(
-      errorInfo.message || "An error occurred while fetching the data.",
-    );
-  }
-  return res.json();
+type DashboardError = { message?: string };
+type ProviderWidgetsResponse = {
+  widgetsData: Record<
+    string,
+    {
+      last10Days: { date: string; count: number }[];
+      batteryLevel: number;
+    }
+  >;
 };
+type DashboardStatsResponse = {
+  stats: {
+    totalActivities: number;
+    providerDistribution: Record<string, number>;
+  };
+};
+type IntegrationStatusResponse = {
+  integrations: Array<{
+    provider: string;
+    connected: boolean;
+  }>;
+};
+type SyncResponse = { message: string; syncedItemsCount: number };
+type UnauthorizedError = Error & { status: number; provider: string };
+/**
+ * 外部サービス連携で扱うプロバイダーID
+ */
+export type IntegrationProvider =
+  | "github"
+  | "wakatime"
+  | "qiita"
+  | "zenn"
+  | "atcoder";
+
+const createUnauthorizedError = (
+  provider: string,
+  fallbackProvider: string,
+): UnauthorizedError => {
+  const error = new Error("Unauthorized");
+  return Object.assign(error, {
+    status: 401,
+    provider: provider || fallbackProvider,
+  });
+};
+
+const toDashboardError = (value: unknown): DashboardError => {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "message" in value &&
+    (typeof value.message === "string" || typeof value.message === "undefined")
+  ) {
+    return { message: value.message };
+  }
+  return {};
+};
+
+const toProviderError = (value: unknown): { provider?: string } => {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "provider" in value &&
+    (typeof value.provider === "string" ||
+      typeof value.provider === "undefined")
+  ) {
+    return { provider: value.provider };
+  }
+  return {};
+};
+
+const getAuthorizationHeader = (token: string) => ({
+  Authorization: `Bearer ${token}`,
+});
 
 /**
  * クライアントサイドでのみトークンを取得する簡易フック
@@ -37,25 +90,33 @@ const useToken = () => {
  */
 export const useGetProviderWidgetsQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/dashboard/provider-widgets`;
 
-  const { data, error, isLoading, mutate } = useSWR(
-    token ? [url, token, "dashboard-provider-widgets"] : null,
-    fetcher,
+  const { data, error, isLoading, mutate } = useSWR<ProviderWidgetsResponse>(
+    token ? ["dashboard-provider-widgets", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.dashboard["provider-widgets"].$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: ProviderWidgetsResponse = await response.json();
+      return data;
+    },
   );
 
   return {
-    data: data as
-      | {
-          widgetsData: Record<
-            string,
-            {
-              last10Days: { date: string; count: number }[];
-              batteryLevel: number;
-            }
-          >;
-        }
-      | undefined,
+    data,
     error,
     isLoading,
     mutate,
@@ -67,22 +128,33 @@ export const useGetProviderWidgetsQuery = () => {
  */
 export const useGetDashboardStatsQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/dashboard/stats`;
 
-  const { data, error, isLoading, mutate } = useSWR(
-    token ? [url, token, "dashboard-stats"] : null,
-    fetcher,
+  const { data, error, isLoading, mutate } = useSWR<DashboardStatsResponse>(
+    token ? ["dashboard-stats", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.dashboard.stats.$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: DashboardStatsResponse = await response.json();
+      return data;
+    },
   );
 
   return {
-    data: data as
-      | {
-          stats: {
-            totalActivities: number;
-            providerDistribution: Record<string, number>;
-          };
-        }
-      | undefined,
+    data,
     error,
     isLoading,
     mutate,
@@ -94,26 +166,64 @@ export const useGetDashboardStatsQuery = () => {
  */
 export const useGetIntegrationStatusQuery = () => {
   const token = useToken();
-  const url = `${API_URL}/api/auth/status`;
 
-  const { data, error, isLoading, mutate } = useSWR(
-    token ? [url, token, "integration-status"] : null,
-    fetcher,
+  const { data, error, isLoading, mutate } = useSWR<IntegrationStatusResponse>(
+    token ? ["integration-status", token] : null,
+    async ([_, currentToken]: [string, string]) => {
+      const response = await client.api.auth.status.$get(
+        {},
+        {
+          headers: getAuthorizationHeader(currentToken),
+        },
+      );
+
+      if (!response.ok) {
+        const errorInfo = toDashboardError(
+          await response.json().catch(() => ({})),
+        );
+        throw new Error(
+          errorInfo.message || "An error occurred while fetching the data.",
+        );
+      }
+
+      const data: IntegrationStatusResponse = await response.json();
+      return data;
+    },
   );
 
   return {
-    data: data as
-      | {
-          integrations: Array<{
-            provider: string;
-            connected: boolean;
-          }>;
-        }
-      | undefined,
+    data,
     error,
     isLoading,
     mutate,
   };
+};
+
+/**
+ * OAuth連携開始用のリダイレクトURLを取得する
+ */
+export const fetchIntegrationRedirectUrl = async (
+  token: string,
+  provider: string,
+): Promise<string> => {
+  const response = await client.api.auth[":provider"].$get(
+    {
+      param: { provider },
+    },
+    { headers: getAuthorizationHeader(token) },
+  );
+
+  if (!response.ok) {
+    const errorData = toDashboardError(await response.json().catch(() => ({})));
+    throw new Error(errorData.message || "Failed to get authorization url");
+  }
+
+  const data: { redirectUrl?: string } = await response.json();
+  if (!data.redirectUrl) {
+    throw new Error("Failed to get authorization url");
+  }
+
+  return data.redirectUrl;
 };
 
 /**
@@ -123,45 +233,35 @@ export const useSyncExternalData = () => {
   const token = useToken();
   const { mutate } = useSWRConfig();
 
-  const syncData = async (provider: string) => {
+  const syncData = async (provider: IntegrationProvider) => {
     if (!token) throw new Error("Unauthorized");
 
-    const response = await fetch(`${API_URL}/api/dashboard/sync/${provider}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await client.api.dashboard.sync[":provider"].$post(
+      {
+        param: { provider },
       },
-    });
+      { headers: getAuthorizationHeader(token) },
+    );
 
     if (!response.ok) {
       if (response.status === 401) {
-        const errorData = (await response.json().catch(() => ({}))) as {
-          provider?: string;
-        };
-        const err = new Error("Unauthorized") as Error & {
-          status?: number;
-          provider?: string;
-        };
-        err.status = 401;
-        err.provider = errorData.provider || provider;
-        throw err;
+        const errorData = toProviderError(
+          await response.json().catch(() => ({})),
+        );
+        throw createUnauthorizedError(errorData.provider ?? "", provider);
       }
       throw new Error(`Failed to sync ${provider}`);
     }
 
-    const data = (await response.json()) as {
-      message: string;
-      syncedItemsCount: number;
-    };
+    const data = (await response.json()) as SyncResponse;
 
     // SWR キャッシュを破棄して再フェッチを促す
-    // mutate は キーを条件に破棄できる。配列の第3要素に "dashboard-provider-widgets" などを入れる
+    // mutate はキーを条件に破棄できる
     await mutate(
       (key) =>
         Array.isArray(key) &&
-        (key.includes("dashboard-provider-widgets") ||
-          key.includes("dashboard-stats")),
+        (key[0] === "dashboard-provider-widgets" ||
+          key[0] === "dashboard-stats"),
       undefined,
       { revalidate: true },
     );

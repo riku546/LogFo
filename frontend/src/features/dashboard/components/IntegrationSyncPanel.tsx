@@ -1,8 +1,10 @@
 "use client";
 
 import { CheckCircle2, Code2, Github, RefreshCw, Send } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
+  fetchIntegrationRedirectUrl,
+  type IntegrationProvider,
   useGetIntegrationStatusQuery,
   useSyncExternalData,
 } from "../api/dashboardComponents";
@@ -14,39 +16,21 @@ export const IntegrationSyncPanel = () => {
     Record<string, boolean>
   >({});
 
-  const handleAuthRedirect = async (provider: string) => {
+  const handleAuthRedirect = async (provider: IntegrationProvider) => {
     setSyncingProviders((prev) => ({ ...prev, [provider]: true }));
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Unauthorized");
 
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-      const res = await fetch(`${API_URL}/api/auth/${provider}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = (await res.json()) as { message?: string };
-        throw new Error(
-          errorData?.message || "Failed to get authorization url",
-        );
-      }
-
-      const data = (await res.json()) as { redirectUrl?: string };
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
+      const redirectUrl = await fetchIntegrationRedirectUrl(token, provider);
+      window.location.href = redirectUrl;
     } catch (e) {
       console.error(e);
       setSyncingProviders((prev) => ({ ...prev, [provider]: false }));
     }
   };
 
-  const handleSyncNow = async (provider: string) => {
+  const handleSyncNow = async (provider: IntegrationProvider) => {
     setSyncingProviders((prev) => ({ ...prev, [provider]: true }));
     let isUnauthorized = false;
     try {
@@ -55,14 +39,16 @@ export const IntegrationSyncPanel = () => {
       alert(`${provider}の同期が完了しました`);
     } catch (e: unknown) {
       console.error(e);
-      const error = e as { status?: number };
-      if (error.status === 401) {
+      if (isStatusError(e) && e.status === 401) {
         isUnauthorized = true;
+        const redirectProvider = isIntegrationProvider(e.provider)
+          ? e.provider
+          : provider;
         // 401の場合は自動で再連携リダイレクトを実行
         console.log(
-          `401 Unauthorized detected for ${provider}. Redirecting to auth...`,
+          `401 Unauthorized detected for ${redirectProvider}. Redirecting to auth...`,
         );
-        handleAuthRedirect(provider);
+        handleAuthRedirect(redirectProvider);
         return;
       }
       alert(`${provider}の同期に失敗しました`);
@@ -73,7 +59,11 @@ export const IntegrationSyncPanel = () => {
     }
   };
 
-  const providers = [
+  const providers: Array<{
+    id: IntegrationProvider;
+    name: string;
+    icon: ReactNode;
+  }> = [
     {
       id: "github",
       name: "GitHub",
@@ -107,7 +97,7 @@ export const IntegrationSyncPanel = () => {
       <div className="flex flex-col space-y-3">
         {providers.map((p) => {
           const isSyncing = syncingProviders[p.id];
-          const isSynced = statusData?.integrations.some(
+          const isSynced = statusData?.integrations?.some(
             (i) => i.provider === p.id && i.connected,
           );
 
@@ -168,5 +158,22 @@ export const IntegrationSyncPanel = () => {
         })}
       </div>
     </div>
+  );
+};
+const isStatusError = (
+  value: unknown,
+): value is { status?: number; provider?: string } => {
+  return typeof value === "object" && value !== null && "status" in value;
+};
+
+const isIntegrationProvider = (
+  provider: string | undefined,
+): provider is IntegrationProvider => {
+  return (
+    provider === "github" ||
+    provider === "wakatime" ||
+    provider === "qiita" ||
+    provider === "zenn" ||
+    provider === "atcoder"
   );
 };

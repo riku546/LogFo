@@ -9,14 +9,18 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
+const isTheme = (value: string | null): value is Theme => {
+  return value === "light" || value === "dark";
+};
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme) {
+    const savedTheme = localStorage.getItem("theme");
+    if (isTheme(savedTheme)) {
       setTheme(savedTheme);
       document.documentElement.classList.toggle("dark", savedTheme === "dark");
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {

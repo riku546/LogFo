@@ -47,7 +47,7 @@ export class DrizzleSummaryRepository implements SummaryRepository {
       .where(eq(summaries.milestoneId, milestoneId))
       .orderBy(desc(summaries.createdAt));
 
-    return rows as Summary[];
+    return rows;
   }
 
   /**
@@ -65,7 +65,7 @@ export class DrizzleSummaryRepository implements SummaryRepository {
     const row = rows[0];
     if (!row) return undefined;
 
-    return row as Summary;
+    return row;
   }
 
   /**

@@ -14,17 +14,16 @@ const getAuthToken = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, userName }),
   });
-
   const signinResponse = await SELF.fetch("http://localhost:8787/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-
-  const signinBody = (await signinResponse.json()) as { token: string };
+  const signinBody: {
+    token: string;
+  } = await signinResponse.json();
   return signinBody.token;
 };
-
 /**
  * テスト用のvalidなポートフォリオ設定を生成するヘルパー関数
  */
@@ -57,12 +56,10 @@ const createTestSettings = (overrides = {}) => ({
   },
   ...overrides,
 });
-
 describe("Portfolio API Integration Test", () => {
   describe("portfolio save (POST /api/portfolio)", () => {
     it("save portfolio successfully (create)", async () => {
       const token = await getAuthToken("portfolio-save@example.com");
-
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
         headers: {
@@ -75,16 +72,15 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       expect(response.status).toBe(201);
-      const body = (await response.json()) as { portfolioId: string };
+      const body: {
+        portfolioId: string;
+      } = await response.json();
       expect(body.portfolioId).toBeDefined();
       expect(typeof body.portfolioId).toBe("string");
     });
-
     it("update portfolio on second save (upsert)", async () => {
       const token = await getAuthToken("portfolio-upsert@example.com");
-
       // 1st save
       await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
@@ -98,7 +94,6 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       // 2nd save (update)
       const updateResponse = await SELF.fetch(
         "http://localhost:8787/api/portfolio",
@@ -122,9 +117,7 @@ describe("Portfolio API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(201);
-
       // verify update
       const getResponse = await SELF.fetch(
         "http://localhost:8787/api/portfolio",
@@ -133,17 +126,17 @@ describe("Portfolio API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const getBody = (await getResponse.json()) as {
-        portfolio: { slug: string; isPublic: boolean };
-      };
+      const getBody: {
+        portfolio: {
+          slug: string;
+          isPublic: boolean;
+        };
+      } = await getResponse.json();
       expect(getBody.portfolio.slug).toBe("upsert-updated");
       expect(getBody.portfolio.isPublic).toBe(true);
     });
-
     it("return 400 on validation error (empty slug)", async () => {
       const token = await getAuthToken("portfolio-validate@example.com");
-
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
         headers: {
@@ -156,13 +149,10 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       expect(response.status).toBe(400);
     });
-
     it("return 400 on validation error (invalid slug format)", async () => {
       const token = await getAuthToken("portfolio-validate2@example.com");
-
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
         headers: {
@@ -175,14 +165,11 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       expect(response.status).toBe(400);
     });
-
     it("return 409 on slug conflict with another user", async () => {
       const tokenA = await getAuthToken("portfolio-slug-a@example.com");
       const tokenB = await getAuthToken("portfolio-slug-b@example.com");
-
       // User A saves with slug "taken-slug"
       await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
@@ -196,7 +183,6 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       // User B tries to use the same slug
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
@@ -210,15 +196,12 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       expect(response.status).toBe(409);
     });
   });
-
   describe("portfolio get (GET /api/portfolio)", () => {
     it("get portfolio after saving", async () => {
       const token = await getAuthToken("portfolio-get@example.com");
-
       // Save first
       await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
@@ -232,25 +215,26 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         portfolio: {
           slug: string;
           isPublic: boolean;
           settings: {
             profile: {
-              careerStories: Array<{ id: string; title: string }>;
+              careerStories: Array<{
+                id: string;
+                title: string;
+              }>;
               skills: string[];
             };
           };
         };
-      };
+      } = await response.json();
       expect(body.portfolio.slug).toBe("get-test");
       expect(body.portfolio.isPublic).toBe(false);
       expect(body.portfolio.settings.profile.careerStories).toHaveLength(1);
@@ -265,23 +249,18 @@ describe("Portfolio API Integration Test", () => {
         "TypeScript",
       ]);
     });
-
     it("return 404 when no portfolio exists", async () => {
       const token = await getAuthToken("portfolio-noexist@example.com");
-
       const response = await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       expect(response.status).toBe(404);
     });
   });
-
   describe("public portfolio (GET /portfolio/public/:slug)", () => {
     it("get public portfolio by slug", async () => {
       const token = await getAuthToken("portfolio-public@example.com");
-
       await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
         headers: {
@@ -294,25 +273,25 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       // Access public route (no auth needed)
       const response = await SELF.fetch(
         "http://localhost:8787/portfolio/public/public-test",
         { method: "GET" },
       );
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         portfolio: {
           slug: string;
           settings: {
             profile: {
-              careerStories: Array<{ id: string }>;
+              careerStories: Array<{
+                id: string;
+              }>;
               skills: string[];
             };
           };
         };
-      };
+      } = await response.json();
       expect(body.portfolio.slug).toBe("public-test");
       expect(body.portfolio.settings).toBeDefined();
       expect(body.portfolio.settings.profile.careerStories[0].id).toBe(
@@ -323,10 +302,8 @@ describe("Portfolio API Integration Test", () => {
         "TypeScript",
       ]);
     });
-
     it("return 403 when portfolio is not public", async () => {
       const token = await getAuthToken("portfolio-private@example.com");
-
       await SELF.fetch("http://localhost:8787/api/portfolio", {
         method: "POST",
         headers: {
@@ -339,21 +316,17 @@ describe("Portfolio API Integration Test", () => {
           settings: createTestSettings(),
         }),
       });
-
       const response = await SELF.fetch(
         "http://localhost:8787/portfolio/public/private-test",
         { method: "GET" },
       );
-
       expect(response.status).toBe(403);
     });
-
     it("return 404 when slug does not exist", async () => {
       const response = await SELF.fetch(
         "http://localhost:8787/portfolio/public/nonexistent-slug",
         { method: "GET" },
       );
-
       expect(response.status).toBe(404);
     });
   });

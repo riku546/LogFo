@@ -80,7 +80,10 @@ export const useRoadmapGenerate = () => {
 
       // requestパラメータからリクエストデータをパースするワークアラウンド
       // （useObjectのsubmitに渡した引数は本文JSONとしてinit.bodyに入るため）
-      const requestData = JSON.parse(init?.body as string);
+      if (typeof init?.body !== "string") {
+        throw new Error("Invalid request body");
+      }
+      const requestData = JSON.parse(init.body);
 
       return roadmapGenerateFetch(input, init, {
         token,

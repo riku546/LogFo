@@ -14,23 +14,25 @@ const getAuthToken = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, userName }),
   });
-
   const signinResponse = await SELF.fetch("http://localhost:8787/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-
-  const signinBody = (await signinResponse.json()) as { token: string };
+  const signinBody: {
+    token: string;
+  } = await signinResponse.json();
   return signinBody.token;
 };
-
 /**
  * ヘルパー関数: テスト用ロードマップを作成し、マイルストーンIDとタスクIDを返す
  */
 const createTestRoadmapAndGetIds = async (
   token: string,
-): Promise<{ milestoneId: string; taskId: string }> => {
+): Promise<{
+  milestoneId: string;
+  taskId: string;
+}> => {
   const saveResponse = await SELF.fetch("http://localhost:8787/api/roadmap", {
     method: "POST",
     headers: {
@@ -58,9 +60,9 @@ const createTestRoadmapAndGetIds = async (
       ],
     }),
   });
-
-  const saveBody = (await saveResponse.json()) as { roadmapId: string };
-
+  const saveBody: {
+    roadmapId: string;
+  } = await saveResponse.json();
   const detailResponse = await SELF.fetch(
     `http://localhost:8787/api/roadmap/${saveBody.roadmapId}`,
     {
@@ -68,22 +70,21 @@ const createTestRoadmapAndGetIds = async (
       headers: { Authorization: `Bearer ${token}` },
     },
   );
-
-  const detailBody = (await detailResponse.json()) as {
+  const detailBody: {
     roadmap: {
       milestones: Array<{
         id: string;
-        tasks: Array<{ id: string }>;
+        tasks: Array<{
+          id: string;
+        }>;
       }>;
     };
-  };
-
+  } = await detailResponse.json();
   return {
     milestoneId: detailBody.roadmap.milestones[0].id,
     taskId: detailBody.roadmap.milestones[0].tasks[0].id,
   };
 };
-
 /**
  * ヘルパー関数: テスト用の活動記録を作成する
  */
@@ -102,13 +103,11 @@ const _createTestActivityLog = async (
     body: JSON.stringify({ taskId, content, loggedDate }),
   });
 };
-
 describe("Summary API Integration Test", () => {
   describe("summary save (POST /api/summary)", () => {
     it("save summary successfully", async () => {
       const token = await getAuthToken("summary-save@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       const response = await SELF.fetch("http://localhost:8787/api/summary", {
         method: "POST",
         headers: {
@@ -121,17 +120,16 @@ describe("Summary API Integration Test", () => {
           content: "## test summary\n\ntest content markdown",
         }),
       });
-
       expect(response.status).toBe(201);
-      const body = (await response.json()) as { summaryId: string };
+      const body: {
+        summaryId: string;
+      } = await response.json();
       expect(body.summaryId).toBeDefined();
       expect(typeof body.summaryId).toBe("string");
     });
-
     it("return 400 on validation error (empty title)", async () => {
       const token = await getAuthToken("summary-validate@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       const response = await SELF.fetch("http://localhost:8787/api/summary", {
         method: "POST",
         headers: {
@@ -144,14 +142,11 @@ describe("Summary API Integration Test", () => {
           content: "content text",
         }),
       });
-
       expect(response.status).toBe(400);
     });
-
     it("return 400 on validation error (empty content)", async () => {
       const token = await getAuthToken("summary-validate2@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       const response = await SELF.fetch("http://localhost:8787/api/summary", {
         method: "POST",
         headers: {
@@ -164,16 +159,13 @@ describe("Summary API Integration Test", () => {
           content: "",
         }),
       });
-
       expect(response.status).toBe(400);
     });
   });
-
   describe("summary list by milestone (GET /api/summary/milestone/:milestoneId)", () => {
     it("get summaries ordered by createdAt desc", async () => {
       const token = await getAuthToken("summary-list@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       // 2件のサマリーを作成
       await SELF.fetch("http://localhost:8787/api/summary", {
         method: "POST",
@@ -187,7 +179,6 @@ describe("Summary API Integration Test", () => {
           content: "first content",
         }),
       });
-
       await SELF.fetch("http://localhost:8787/api/summary", {
         method: "POST",
         headers: {
@@ -200,7 +191,6 @@ describe("Summary API Integration Test", () => {
           content: "second content",
         }),
       });
-
       const response = await SELF.fetch(
         `http://localhost:8787/api/summary/milestone/${milestoneId}`,
         {
@@ -208,18 +198,18 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
-        summaries: Array<{ title: string; content: string }>;
-      };
+      const body: {
+        summaries: Array<{
+          title: string;
+          content: string;
+        }>;
+      } = await response.json();
       expect(body.summaries).toHaveLength(2);
     });
-
     it("return empty array when no summaries exist", async () => {
       const token = await getAuthToken("summary-empty@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       const response = await SELF.fetch(
         `http://localhost:8787/api/summary/milestone/${milestoneId}`,
         {
@@ -227,20 +217,17 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         summaries: Array<unknown>;
-      };
+      } = await response.json();
       expect(body.summaries).toHaveLength(0);
     });
   });
-
   describe("summary update (PUT /api/summary/:id)", () => {
     it("update summary successfully", async () => {
       const token = await getAuthToken("summary-update@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       // サマリー作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/summary",
@@ -257,11 +244,9 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         summaryId: string;
-      };
-
+      } = await createResponse.json();
       // 更新
       const updateResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/${createBody.summaryId}`,
@@ -277,9 +262,7 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(200);
-
       // 更新反映確認
       const listResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/milestone/${milestoneId}`,
@@ -288,20 +271,20 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const listBody = (await listResponse.json()) as {
-        summaries: Array<{ title: string; content: string }>;
-      };
+      const listBody: {
+        summaries: Array<{
+          title: string;
+          content: string;
+        }>;
+      } = await listResponse.json();
       expect(listBody.summaries[0].title).toBe("after update");
       expect(listBody.summaries[0].content).toBe("after content");
     });
   });
-
   describe("summary delete (DELETE /api/summary/:id)", () => {
     it("delete summary successfully", async () => {
       const token = await getAuthToken("summary-delete@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(token);
-
       // サマリー作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/summary",
@@ -318,11 +301,9 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         summaryId: string;
-      };
-
+      } = await createResponse.json();
       // 削除
       const deleteResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/${createBody.summaryId}`,
@@ -331,9 +312,7 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(deleteResponse.status).toBe(200);
-
       // 削除後に一覧取得すると0件
       const listResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/milestone/${milestoneId}`,
@@ -342,20 +321,17 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const listBody = (await listResponse.json()) as {
+      const listBody: {
         summaries: Array<unknown>;
-      };
+      } = await listResponse.json();
       expect(listBody.summaries).toHaveLength(0);
     });
   });
-
   describe("ownership check", () => {
     it("return 403 when updating another user summary", async () => {
       const tokenA = await getAuthToken("summary-owner-a@example.com");
       const tokenB = await getAuthToken("summary-owner-b@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(tokenA);
-
       // ユーザーAでサマリー作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/summary",
@@ -372,11 +348,9 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         summaryId: string;
-      };
-
+      } = await createResponse.json();
       // ユーザーBで更新しようとすると403
       const updateResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/${createBody.summaryId}`,
@@ -392,15 +366,12 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(403);
     });
-
     it("return 403 when deleting another user summary", async () => {
       const tokenA = await getAuthToken("summary-owner-c@example.com");
       const tokenB = await getAuthToken("summary-owner-d@example.com");
       const { milestoneId } = await createTestRoadmapAndGetIds(tokenA);
-
       // ユーザーAでサマリー作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/summary",
@@ -417,11 +388,9 @@ describe("Summary API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         summaryId: string;
-      };
-
+      } = await createResponse.json();
       // ユーザーBで削除しようとすると403
       const deleteResponse = await SELF.fetch(
         `http://localhost:8787/api/summary/${createBody.summaryId}`,
@@ -430,7 +399,6 @@ describe("Summary API Integration Test", () => {
           headers: { Authorization: `Bearer ${tokenB}` },
         },
       );
-
       expect(deleteResponse.status).toBe(403);
     });
   });

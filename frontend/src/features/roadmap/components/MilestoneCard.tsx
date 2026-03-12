@@ -15,6 +15,12 @@ const STATUS_COLORS: Record<string, string> = {
   DONE: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
 };
 
+const isTaskStatus = (
+  value: string,
+): value is "TODO" | "IN_PROGRESS" | "DONE" => {
+  return value === "TODO" || value === "IN_PROGRESS" || value === "DONE";
+};
+
 export interface MilestoneCardProps {
   milestone: RoadmapMilestone;
   milestoneIndex: number;
@@ -56,11 +62,8 @@ const TaskEditingView = ({
     <select
       value={task.status}
       onChange={(event) =>
-        onChangeTaskStatus(
-          milestoneIndex,
-          taskIndex,
-          event.target.value as "TODO" | "IN_PROGRESS" | "DONE",
-        )
+        isTaskStatus(event.currentTarget.value) &&
+        onChangeTaskStatus(milestoneIndex, taskIndex, event.currentTarget.value)
       }
       className="cursor-pointer rounded border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-700"
     >

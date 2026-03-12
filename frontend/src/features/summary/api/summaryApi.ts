@@ -1,3 +1,5 @@
+import { client } from "@/lib/client";
+
 /**
  * サマリー機能に関するAPI通信ユーティリティ
  *
@@ -66,18 +68,18 @@ export const fetchSummariesByMilestone = async (
   token: string,
   milestoneId: string,
 ): Promise<SummaryItem[]> => {
-  const response = await fetch(
-    `${API_URL}/api/summary/milestone/${milestoneId}`,
+  const response = await client.api.summary.milestone[":milestoneId"].$get(
     {
-      headers: getHeaders(token, false),
+      param: { milestoneId },
     },
+    { headers: getHeaders(token, false) },
   );
 
   if (!response.ok) {
     throw new SummaryApiError("サマリーの取得に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as { summaries: SummaryItem[] };
+  const body: { summaries: SummaryItem[] } = await response.json();
   return body.summaries;
 };
 
@@ -88,11 +90,12 @@ export const saveSummary = async (
   token: string,
   payload: SaveSummaryPayload,
 ): Promise<string> => {
-  const response = await fetch(`${API_URL}/api/summary`, {
-    method: "POST",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.summary.$post(
+    {
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new SummaryApiError("サマリーの保存に失敗しました", response.status);
@@ -110,11 +113,13 @@ export const updateSummary = async (
   summaryId: string,
   payload: UpdateSummaryPayload,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/summary/${summaryId}`, {
-    method: "PUT",
-    headers: getHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await client.api.summary[":id"].$put(
+    {
+      param: { id: summaryId },
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
 
   if (!response.ok) {
     throw new SummaryApiError("サマリーの更新に失敗しました", response.status);
@@ -128,10 +133,12 @@ export const deleteSummary = async (
   token: string,
   summaryId: string,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/summary/${summaryId}`, {
-    method: "DELETE",
-    headers: getHeaders(token, false),
-  });
+  const response = await client.api.summary[":id"].$delete(
+    {
+      param: { id: summaryId },
+    },
+    { headers: getHeaders(token, false) },
+  );
 
   if (!response.ok) {
     throw new SummaryApiError("サマリーの削除に失敗しました", response.status);

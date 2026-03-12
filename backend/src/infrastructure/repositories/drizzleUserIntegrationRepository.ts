@@ -4,6 +4,12 @@ import type { UserIntegrationRepository } from "../../core/application/interface
 import type { UserIntegration } from "../../core/domain/models/userIntegration";
 import { userIntegrations } from "../database/schema";
 
+const isProvider = (
+  provider: string,
+): provider is UserIntegration["provider"] => {
+  return ["github", "wakatime", "qiita", "zenn", "atcoder"].includes(provider);
+};
+
 export class DrizzleUserIntegrationRepository
   implements UserIntegrationRepository
 {
@@ -13,13 +19,16 @@ export class DrizzleUserIntegrationRepository
     userId: string,
     provider: string,
   ): Promise<UserIntegration | null> {
+    if (!isProvider(provider)) {
+      return null;
+    }
     const rows = await this.db
       .select()
       .from(userIntegrations)
       .where(
         and(
           eq(userIntegrations.userId, userId),
-          eq(userIntegrations.provider, provider as any),
+          eq(userIntegrations.provider, provider),
         ),
       )
       .limit(1);
@@ -83,7 +92,7 @@ export class DrizzleUserIntegrationRepository
       .insert(userIntegrations)
       .values({
         userId: integration.userId,
-        provider: integration.provider as any,
+        provider: integration.provider,
         providerUserId: integration.providerUserId,
         accessToken: integration.accessToken,
       })

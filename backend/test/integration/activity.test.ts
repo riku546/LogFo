@@ -14,17 +14,16 @@ const getAuthToken = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, userName }),
   });
-
   const signinResponse = await SELF.fetch("http://localhost:8787/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-
-  const signinBody = (await signinResponse.json()) as { token: string };
+  const signinBody: {
+    token: string;
+  } = await signinResponse.json();
   return signinBody.token;
 };
-
 /**
  * ヘルパー関数: テスト用ロードマップを作成し、タスクIDを返す
  */
@@ -58,9 +57,9 @@ const createTestRoadmapAndGetTaskId = async (
       ],
     }),
   });
-
-  const saveBody = (await saveResponse.json()) as { roadmapId: string };
-
+  const saveBody: {
+    roadmapId: string;
+  } = await saveResponse.json();
   // ロードマップ詳細からタスクIDを取得
   const detailResponse = await SELF.fetch(
     `http://localhost:8787/api/roadmap/${saveBody.roadmapId}`,
@@ -69,24 +68,22 @@ const createTestRoadmapAndGetTaskId = async (
       headers: { Authorization: `Bearer ${token}` },
     },
   );
-
-  const detailBody = (await detailResponse.json()) as {
+  const detailBody: {
     roadmap: {
       milestones: Array<{
-        tasks: Array<{ id: string }>;
+        tasks: Array<{
+          id: string;
+        }>;
       }>;
     };
-  };
-
+  } = await detailResponse.json();
   return detailBody.roadmap.milestones[0].tasks[0].id;
 };
-
 describe("Activity Tracking API Integration Test", () => {
   describe("活動記録の作成 (POST /api/activities)", () => {
     it("正常に活動記録を作成できる", async () => {
       const token = await getAuthToken("activity-create@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       const response = await SELF.fetch(
         "http://localhost:8787/api/activities",
         {
@@ -102,17 +99,16 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
       expect(response.status).toBe(201);
-      const body = (await response.json()) as { activityLogId: string };
+      const body: {
+        activityLogId: string;
+      } = await response.json();
       expect(body.activityLogId).toBeDefined();
       expect(typeof body.activityLogId).toBe("string");
     });
-
     it("バリデーションエラー時は400が返る（content空文字）", async () => {
       const token = await getAuthToken("activity-validation@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       const response = await SELF.fetch(
         "http://localhost:8787/api/activities",
         {
@@ -128,16 +124,13 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
       expect(response.status).toBe(400);
     });
   });
-
   describe("活動記録一覧取得 (GET /api/activities/:taskId)", () => {
     it("タスクに紐づく活動記録を日時降順で取得できる", async () => {
       const token = await getAuthToken("activity-list@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       // 2件の記録を異なる日付で作成
       await SELF.fetch("http://localhost:8787/api/activities", {
         method: "POST",
@@ -151,7 +144,6 @@ describe("Activity Tracking API Integration Test", () => {
           loggedDate: "2026-03-01",
         }),
       });
-
       await SELF.fetch("http://localhost:8787/api/activities", {
         method: "POST",
         headers: {
@@ -164,7 +156,6 @@ describe("Activity Tracking API Integration Test", () => {
           loggedDate: "2026-03-02",
         }),
       });
-
       const response = await SELF.fetch(
         `http://localhost:8787/api/activities/${taskId}`,
         {
@@ -172,26 +163,23 @@ describe("Activity Tracking API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         activityLogs: Array<{
           content: string;
           loggedDate: string;
         }>;
-      };
+      } = await response.json();
       expect(body.activityLogs).toHaveLength(2);
       // 日時降順で最新が先
       expect(body.activityLogs[0].loggedDate).toBe("2026-03-02");
       expect(body.activityLogs[1].loggedDate).toBe("2026-03-01");
     });
   });
-
   describe("活動記録の更新 (PUT /api/activities/:activityId)", () => {
     it("活動記録を正常に更新できる", async () => {
       const token = await getAuthToken("activity-update@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       // 記録作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/activities",
@@ -208,11 +196,9 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         activityLogId: string;
-      };
-
+      } = await createResponse.json();
       // 更新
       const updateResponse = await SELF.fetch(
         `http://localhost:8787/api/activities/${createBody.activityLogId}`,
@@ -227,9 +213,7 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(200);
-
       // 更新反映確認
       const listResponse = await SELF.fetch(
         `http://localhost:8787/api/activities/${taskId}`,
@@ -238,19 +222,18 @@ describe("Activity Tracking API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const listBody = (await listResponse.json()) as {
-        activityLogs: Array<{ content: string }>;
-      };
+      const listBody: {
+        activityLogs: Array<{
+          content: string;
+        }>;
+      } = await listResponse.json();
       expect(listBody.activityLogs[0].content).toBe("更新後の内容");
     });
   });
-
   describe("活動記録の削除 (DELETE /api/activities/:activityId)", () => {
     it("活動記録を正常に削除できる", async () => {
       const token = await getAuthToken("activity-delete@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       // 記録作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/activities",
@@ -267,11 +250,9 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         activityLogId: string;
-      };
-
+      } = await createResponse.json();
       // 削除
       const deleteResponse = await SELF.fetch(
         `http://localhost:8787/api/activities/${createBody.activityLogId}`,
@@ -280,9 +261,7 @@ describe("Activity Tracking API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(deleteResponse.status).toBe(200);
-
       // 削除後に一覧取得すると0件
       const listResponse = await SELF.fetch(
         `http://localhost:8787/api/activities/${taskId}`,
@@ -291,20 +270,17 @@ describe("Activity Tracking API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const listBody = (await listResponse.json()) as {
+      const listBody: {
         activityLogs: Array<unknown>;
-      };
+      } = await listResponse.json();
       expect(listBody.activityLogs).toHaveLength(0);
     });
   });
-
   describe("所有者チェック", () => {
     it("他のユーザーの活動記録は更新できない（403）", async () => {
       const tokenA = await getAuthToken("activity-owner-a@example.com");
       const tokenB = await getAuthToken("activity-owner-b@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(tokenA);
-
       // ユーザーAで記録作成
       const createResponse = await SELF.fetch(
         "http://localhost:8787/api/activities",
@@ -321,11 +297,9 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
-      const createBody = (await createResponse.json()) as {
+      const createBody: {
         activityLogId: string;
-      };
-
+      } = await createResponse.json();
       // ユーザーBで更新しようとすると403
       const updateResponse = await SELF.fetch(
         `http://localhost:8787/api/activities/${createBody.activityLogId}`,
@@ -340,16 +314,13 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(403);
     });
   });
-
   describe("タスクステータス更新 (PATCH /api/tasks/:taskId/status)", () => {
     it("タスクのステータスを正常に更新できる", async () => {
       const token = await getAuthToken("task-status@example.com");
       const taskId = await createTestRoadmapAndGetTaskId(token);
-
       const response = await SELF.fetch(
         `http://localhost:8787/api/tasks/${taskId}/status`,
         {
@@ -363,7 +334,6 @@ describe("Activity Tracking API Integration Test", () => {
           }),
         },
       );
-
       expect(response.status).toBe(200);
     });
   });
