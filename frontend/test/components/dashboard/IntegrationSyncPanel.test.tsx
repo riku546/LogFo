@@ -20,6 +20,11 @@ describe("IntegrationSyncPanel", () => {
   const mockedFetchIntegrationRedirectUrl = vi.mocked(
     dashboardApi.fetchIntegrationRedirectUrl,
   );
+  const mockedUseGetIntegrationStatusQuery = vi.mocked(
+    dashboardApi.useGetIntegrationStatusQuery,
+  );
+  const mockedUseSyncExternalData = vi.mocked(dashboardApi.useSyncExternalData);
+  const syncDataMock = vi.fn();
 
   beforeEach(() => {
     // location のモック（location.href 代入時のエラー回避）
@@ -34,6 +39,17 @@ describe("IntegrationSyncPanel", () => {
       },
     });
     mockedFetchIntegrationRedirectUrl.mockResolvedValue("https://example.com");
+    mockedUseGetIntegrationStatusQuery.mockReturnValue({
+      data: { integrations: [] },
+      error: undefined,
+      isLoading: false,
+      mutate: vi.fn(),
+    });
+    mockedUseSyncExternalData.mockReturnValue({
+      syncData: syncDataMock,
+    });
+    syncDataMock.mockReset();
+    vi.stubGlobal("alert", vi.fn());
 
     // localStorage のモック
     Object.defineProperty(window, "localStorage", {
@@ -73,6 +89,32 @@ describe("IntegrationSyncPanel", () => {
         "github",
       );
       // location.href が書き換わっていること
+      expect(window.location.href).toBe("https://example.com");
+    });
+  });
+
+  it("同期で401が返った場合に再連携へリダイレクトする", async () => {
+    mockedUseGetIntegrationStatusQuery.mockReturnValue({
+      data: {
+        integrations: [{ provider: "github", connected: true }],
+      },
+      error: undefined,
+      isLoading: false,
+      mutate: vi.fn(),
+    });
+    syncDataMock.mockRejectedValue({ status: 401, provider: "github" });
+
+    render(<IntegrationSyncPanel />);
+
+    const syncNowButton = screen.getByRole("button", { name: "今すぐ同期" });
+    fireEvent.click(syncNowButton);
+
+    await waitFor(() => {
+      expect(syncDataMock).toHaveBeenCalledWith("github");
+      expect(mockedFetchIntegrationRedirectUrl).toHaveBeenCalledWith(
+        "mock-token",
+        "github",
+      );
       expect(window.location.href).toBe("https://example.com");
     });
   });

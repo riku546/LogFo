@@ -12,6 +12,17 @@ export default defineConfig(async () => {
 
   return {
     test: {
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "html", "json-summary"],
+        include: ["src/**/*.ts"],
+        exclude: [
+          "src/index.ts",
+          "worker-configuration.d.ts",
+          "test/**",
+          "**/*.d.ts",
+        ],
+      },
       projects: [
         //ユニットテストのテストファイルはnode上で実行する
         {
