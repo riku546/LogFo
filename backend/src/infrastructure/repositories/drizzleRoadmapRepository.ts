@@ -5,8 +5,11 @@ import type {
   RoadmapRepository,
 } from "../../core/application/interfaces/roadmapRepository";
 import type {
+  MilestoneWithTasks,
   Roadmap,
+  Roadmap as RoadmapModel,
   RoadmapWithMilestones,
+  Task,
 } from "../../core/domain/models/roadmap";
 import { milestones, roadmaps, tasks } from "../database/schema";
 
@@ -106,16 +109,51 @@ export class DrizzleRoadmapRepository implements RoadmapRepository {
       tasksByMilestoneId.set(task.milestoneId, existing);
     }
 
+    const roadmap: RoadmapModel = {
+      id: roadmapRow.id,
+      userId: roadmapRow.userId,
+      currentState: roadmapRow.currentState,
+      goalState: roadmapRow.goalState,
+      pdfContext: roadmapRow.pdfContext,
+      summary: roadmapRow.summary,
+      createdAt: roadmapRow.createdAt,
+      updatedAt: roadmapRow.updatedAt,
+    };
+
+    const roadmapMilestones: MilestoneWithTasks[] = milestoneRows
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((milestone) => {
+        const milestoneTasks: Task[] = (
+          tasksByMilestoneId.get(milestone.id) || []
+        )
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map((task) => ({
+            id: task.id,
+            milestoneId: task.milestoneId,
+            title: task.title,
+            estimatedHours: task.estimatedHours,
+            status: task.status,
+            orderIndex: task.orderIndex,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+          }));
+
+        return {
+          id: milestone.id,
+          roadmapId: milestone.roadmapId,
+          title: milestone.title,
+          description: milestone.description,
+          status: milestone.status,
+          orderIndex: milestone.orderIndex,
+          createdAt: milestone.createdAt,
+          updatedAt: milestone.updatedAt,
+          tasks: milestoneTasks,
+        };
+      });
+
     return {
-      ...(roadmapRow as Roadmap),
-      milestones: milestoneRows
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map((milestone) => ({
-          ...(milestone as (typeof milestoneRows)[0] & { tasks: never[] }),
-          tasks: (tasksByMilestoneId.get(milestone.id) || []).sort(
-            (a, b) => a.orderIndex - b.orderIndex,
-          ) as unknown as RoadmapWithMilestones["milestones"][0]["tasks"],
-        })),
+      ...roadmap,
+      milestones: roadmapMilestones,
     };
   }
 
@@ -131,7 +169,7 @@ export class DrizzleRoadmapRepository implements RoadmapRepository {
       .from(roadmaps)
       .where(eq(roadmaps.userId, userId));
 
-    return rows as Roadmap[];
+    return rows;
   }
 
   /**

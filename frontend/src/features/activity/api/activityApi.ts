@@ -67,9 +67,9 @@ export const fetchActivityLogs = async (
     throw new ActivityApiError("活動記録の取得に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as {
+  const body: {
     activityLogs: ActivityLogItem[];
-  };
+  } = await response.json();
   return body.activityLogs;
 };
 
@@ -90,7 +90,7 @@ export const createActivityLog = async (
     throw new ActivityApiError("活動記録の保存に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as { activityLogId: string };
+  const body: { activityLogId: string } = await response.json();
   return body.activityLogId;
 };
 

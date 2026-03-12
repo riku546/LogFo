@@ -77,7 +77,7 @@ export const fetchSummariesByMilestone = async (
     throw new SummaryApiError("サマリーの取得に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as { summaries: SummaryItem[] };
+  const body: { summaries: SummaryItem[] } = await response.json();
   return body.summaries;
 };
 
@@ -98,7 +98,7 @@ export const saveSummary = async (
     throw new SummaryApiError("サマリーの保存に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as { summaryId: string };
+  const body: { summaryId: string } = await response.json();
   return body.summaryId;
 };
 

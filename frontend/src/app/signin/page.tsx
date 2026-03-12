@@ -10,18 +10,26 @@ import { handleErrorResponse } from "@/lib/error";
 const signinFetcher = async (
   _key: string,
   { arg }: { arg: { email: string; password: string } },
-) => {
+): Promise<{ token: string }> => {
   const res = await client.signin.$post({
     json: arg,
   });
 
-  const data = await res.json();
+  const data: unknown = await res.json();
 
   if (!res.ok) {
     handleErrorResponse(data);
   }
 
-  return data as { token: string };
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "token" in data &&
+    typeof data.token === "string"
+  ) {
+    return { token: data.token };
+  }
+  throw new Error("Unexpected signin response");
 };
 
 export default function SigninPage() {

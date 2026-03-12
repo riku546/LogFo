@@ -10,6 +10,15 @@ import { getDocument } from "pdfjs-serverless";
 export const extractPdfText = async (
   pdfBuffer: ArrayBuffer,
 ): Promise<string | undefined> => {
+  const hasStr = (item: unknown): item is { str: string } => {
+    return (
+      typeof item === "object" &&
+      item !== null &&
+      "str" in item &&
+      typeof item.str === "string"
+    );
+  };
+
   try {
     const loadingTask = getDocument({
       data: new Uint8Array(pdfBuffer),
@@ -22,8 +31,10 @@ export const extractPdfText = async (
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
-        .filter((item) => "str" in item)
-        .map((item) => (item as { str: string }).str)
+        .map((item) =>
+          hasStr(item) && typeof item.str === "string" ? item.str : "",
+        )
+        .filter((text) => text.length > 0)
         .join(" ");
       textParts.push(pageText);
     }

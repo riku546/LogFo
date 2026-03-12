@@ -29,7 +29,8 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts",
-    "../backend/worker-configuration.d.ts"
+    "backend/worker-configuration.d.ts"
+    // "../backend/src/env.d.ts"
   ],
   "exclude": ["node_modules"]
 }

@@ -129,7 +129,7 @@ export const fetchMyPortfolio = async (
     );
   }
 
-  const body = (await response.json()) as { portfolio: PortfolioData };
+  const body: { portfolio: PortfolioData } = await response.json();
   return body.portfolio;
 };
 
@@ -160,7 +160,7 @@ export const savePortfolio = async (
     );
   }
 
-  const body = (await response.json()) as { portfolioId: string };
+  const body: { portfolioId: string } = await response.json();
   return body.portfolioId;
 };
 
@@ -193,6 +193,6 @@ export const fetchPublicPortfolio = async (
     );
   }
 
-  const body = (await response.json()) as { portfolio: PublicPortfolioData };
+  const body: { portfolio: PublicPortfolioData } = await response.json();
   return body.portfolio;
 };

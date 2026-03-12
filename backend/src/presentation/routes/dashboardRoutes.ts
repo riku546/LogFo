@@ -11,14 +11,7 @@ import { WakatimeService } from "../../infrastructure/external/wakatimeService";
 import { DrizzleExternalActivityRepository } from "../../infrastructure/repositories/drizzleExternalActivityRepository";
 import { DrizzleUserIntegrationRepository } from "../../infrastructure/repositories/drizzleUserIntegrationRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
-
-const getUserIdFromJwt = (c: { get: (key: string) => unknown }): string => {
-  const jwtPayload = c.get("jwtPayload") as { sub?: string } | undefined;
-  if (!jwtPayload?.sub) {
-    throw new HTTPException(401, { message: "Invalid token" });
-  }
-  return jwtPayload.sub;
-};
+import { getUserIdFromJwt } from "../../lib/readJson";
 
 export const createDashboardRoutes = () => {
   return (

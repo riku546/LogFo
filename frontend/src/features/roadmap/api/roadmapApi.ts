@@ -129,7 +129,7 @@ export const fetchRoadmapList = async (
     );
   }
 
-  const body = (await response.json()) as { roadmaps: RoadmapListItem[] };
+  const body: { roadmaps: RoadmapListItem[] } = await response.json();
   return body.roadmaps;
 };
 
@@ -151,7 +151,7 @@ export const fetchRoadmapDetail = async (
     );
   }
 
-  const body = (await response.json()) as { roadmap: RoadmapDetail };
+  const body: { roadmap: RoadmapDetail } = await response.json();
   return body.roadmap;
 };
 
@@ -172,7 +172,7 @@ export const saveRoadmap = async (
     throw new RoadmapApiError("保存に失敗しました", response.status);
   }
 
-  const body = (await response.json()) as { roadmapId: string };
+  const body: { roadmapId: string } = await response.json();
   return body.roadmapId;
 };
 

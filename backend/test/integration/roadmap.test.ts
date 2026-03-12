@@ -15,28 +15,25 @@ const getAuthToken = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, userName }),
   });
-
   // サインイン
   const signinResponse = await SELF.fetch("http://localhost:8787/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-
-  const signinBody = (await signinResponse.json()) as { token: string };
+  const signinBody: {
+    token: string;
+  } = await signinResponse.json();
   return signinBody.token;
 };
-
 describe("Roadmap API Integration Test", () => {
   describe("認証なしのアクセス", () => {
     it("JWT無しでロードマップ一覧を取得しようとすると401が返る", async () => {
       const response = await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "GET",
       });
-
       expect(response.status).toBe(401);
     });
-
     it("JWT無しでロードマップを保存しようとすると401が返る", async () => {
       const response = await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "POST",
@@ -48,11 +45,9 @@ describe("Roadmap API Integration Test", () => {
           milestones: [],
         }),
       });
-
       expect(response.status).toBe(401);
     });
   });
-
   describe("ロードマップ保存 (POST /api/roadmap)", () => {
     it("正常にロードマップを保存できる", async () => {
       const token = await getAuthToken(
@@ -60,7 +55,6 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "saveTestUser",
       );
-
       const response = await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "POST",
         headers: {
@@ -105,20 +99,19 @@ describe("Roadmap API Integration Test", () => {
           ],
         }),
       });
-
       expect(response.status).toBe(201);
-      const body = (await response.json()) as { roadmapId: string };
+      const body: {
+        roadmapId: string;
+      } = await response.json();
       expect(body.roadmapId).toBeDefined();
       expect(typeof body.roadmapId).toBe("string");
     });
-
     it("バリデーションエラー時は400が返る（必須フィールド欠損）", async () => {
       const token = await getAuthToken(
         "save-validation@example.com",
         "password123",
         "validationUser",
       );
-
       const response = await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "POST",
         headers: {
@@ -131,11 +124,9 @@ describe("Roadmap API Integration Test", () => {
           milestones: [],
         }),
       });
-
       expect(response.status).toBe(400);
     });
   });
-
   describe("ロードマップ一覧取得 (GET /api/roadmap)", () => {
     it("認証済みユーザーのロードマップ一覧を取得できる", async () => {
       const token = await getAuthToken(
@@ -143,7 +134,6 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "listTestUser",
       );
-
       // まずロードマップを1件保存
       await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "POST",
@@ -166,27 +156,24 @@ describe("Roadmap API Integration Test", () => {
           ],
         }),
       });
-
       // 一覧取得
       const response = await SELF.fetch("http://localhost:8787/api/roadmap", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         roadmaps: Array<{
           id: string;
           goalState: string;
           currentState: string;
         }>;
-      };
+      } = await response.json();
       expect(body.roadmaps).toBeDefined();
       expect(Array.isArray(body.roadmaps)).toBe(true);
       expect(body.roadmaps.length).toBeGreaterThanOrEqual(1);
     });
   });
-
   describe("ロードマップ詳細取得 (GET /api/roadmap/:id)", () => {
     it("保存したロードマップの詳細を取得できる", async () => {
       const token = await getAuthToken(
@@ -194,7 +181,6 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "detailTestUser",
       );
-
       // ロードマップ保存
       const saveResponse = await SELF.fetch(
         "http://localhost:8787/api/roadmap",
@@ -226,10 +212,10 @@ describe("Roadmap API Integration Test", () => {
           }),
         },
       );
-
-      const saveBody = (await saveResponse.json()) as { roadmapId: string };
+      const saveBody: {
+        roadmapId: string;
+      } = await saveResponse.json();
       const roadmapId = saveBody.roadmapId;
-
       // 詳細取得
       const response = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -238,9 +224,8 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(response.status).toBe(200);
-      const body = (await response.json()) as {
+      const body: {
         roadmap: {
           id: string;
           currentState: string;
@@ -248,10 +233,13 @@ describe("Roadmap API Integration Test", () => {
           summary: string;
           milestones: Array<{
             title: string;
-            tasks: Array<{ title: string; estimatedHours: number }>;
+            tasks: Array<{
+              title: string;
+              estimatedHours: number;
+            }>;
           }>;
         };
-      };
+      } = await response.json();
       expect(body.roadmap).toBeDefined();
       expect(body.roadmap.id).toBe(roadmapId);
       expect(body.roadmap.goalState).toBe("フルスタックエンジニア");
@@ -259,14 +247,12 @@ describe("Roadmap API Integration Test", () => {
       expect(body.roadmap.milestones[0].title).toBe("フロントエンド");
       expect(body.roadmap.milestones[0].tasks).toHaveLength(1);
     });
-
     it("存在しないIDの場合は404が返る", async () => {
       const token = await getAuthToken(
         "notfound-test@example.com",
         "password123",
         "notFoundUser",
       );
-
       const response = await SELF.fetch(
         "http://localhost:8787/api/roadmap/non-existent-id",
         {
@@ -274,11 +260,9 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(response.status).toBe(404);
     });
   });
-
   describe("ロードマップ更新 (PUT /api/roadmap/:id)", () => {
     it("ロードマップを正常に更新できる", async () => {
       const token = await getAuthToken(
@@ -286,7 +270,6 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "updateTestUser",
       );
-
       // まず保存
       const saveResponse = await SELF.fetch(
         "http://localhost:8787/api/roadmap",
@@ -318,10 +301,10 @@ describe("Roadmap API Integration Test", () => {
           }),
         },
       );
-
-      const saveBody = (await saveResponse.json()) as { roadmapId: string };
+      const saveBody: {
+        roadmapId: string;
+      } = await saveResponse.json();
       const roadmapId = saveBody.roadmapId;
-
       // 更新
       const updateResponse = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -361,9 +344,7 @@ describe("Roadmap API Integration Test", () => {
           }),
         },
       );
-
       expect(updateResponse.status).toBe(200);
-
       // 更新後のデータを確認
       const detailResponse = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -372,17 +353,19 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
-      const detailBody = (await detailResponse.json()) as {
+      const detailBody: {
         roadmap: {
           goalState: string;
           summary: string;
           milestones: Array<{
             title: string;
-            tasks: Array<{ title: string; status: string }>;
+            tasks: Array<{
+              title: string;
+              status: string;
+            }>;
           }>;
         };
-      };
+      } = await detailResponse.json();
       expect(detailBody.roadmap.goalState).toBe(
         "バックエンドエンジニア（更新済み）",
       );
@@ -390,7 +373,6 @@ describe("Roadmap API Integration Test", () => {
       expect(detailBody.roadmap.milestones[0].tasks).toHaveLength(2);
     });
   });
-
   describe("ロードマップ削除 (DELETE /api/roadmap/:id)", () => {
     it("ロードマップを正常に削除できる", async () => {
       const token = await getAuthToken(
@@ -398,7 +380,6 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "deleteTestUser",
       );
-
       // まず保存
       const saveResponse = await SELF.fetch(
         "http://localhost:8787/api/roadmap",
@@ -417,10 +398,10 @@ describe("Roadmap API Integration Test", () => {
           }),
         },
       );
-
-      const saveBody = (await saveResponse.json()) as { roadmapId: string };
+      const saveBody: {
+        roadmapId: string;
+      } = await saveResponse.json();
       const roadmapId = saveBody.roadmapId;
-
       // 削除
       const deleteResponse = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -429,9 +410,7 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(deleteResponse.status).toBe(200);
-
       // 削除後にアクセスすると404が返る
       const detailResponse = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -440,11 +419,9 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       expect(detailResponse.status).toBe(404);
     });
   });
-
   describe("所有者チェック", () => {
     it("他のユーザーのロードマップにはアクセスできない（403）", async () => {
       // ユーザーA
@@ -453,14 +430,12 @@ describe("Roadmap API Integration Test", () => {
         "password123",
         "ownerA",
       );
-
       // ユーザーB
       const tokenB = await getAuthToken(
         "owner-b@example.com",
         "password123",
         "ownerB",
       );
-
       // ユーザーAでロードマップ保存
       const saveResponse = await SELF.fetch(
         "http://localhost:8787/api/roadmap",
@@ -479,10 +454,10 @@ describe("Roadmap API Integration Test", () => {
           }),
         },
       );
-
-      const saveBody = (await saveResponse.json()) as { roadmapId: string };
+      const saveBody: {
+        roadmapId: string;
+      } = await saveResponse.json();
       const roadmapId = saveBody.roadmapId;
-
       // ユーザーBでアクセスしようとすると403
       const accessResponse = await SELF.fetch(
         `http://localhost:8787/api/roadmap/${roadmapId}`,
@@ -491,7 +466,6 @@ describe("Roadmap API Integration Test", () => {
           headers: { Authorization: `Bearer ${tokenB}` },
         },
       );
-
       expect(accessResponse.status).toBe(403);
     });
   });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import {
   type SavePortfolioPayload,
   savePortfolio,
@@ -41,6 +42,30 @@ const createPayload = (): SavePortfolioPayload => ({
 });
 
 describe("portfolioApi.savePortfolio", () => {
+  const parseRequestBody = (value: BodyInit | null | undefined) => {
+    const requestBodySchema = z.object({
+      settings: z.object({
+        profile: z.object({
+          careerStories: z.array(
+            z.object({ id: z.string(), title: z.string() }),
+          ),
+          skills: z.array(z.string()),
+        }),
+      }),
+    });
+    if (typeof value !== "string") {
+      throw new Error("request body is not string");
+    }
+
+    const parsed: unknown = JSON.parse(value);
+    const validated = requestBodySchema.safeParse(parsed);
+    if (!validated.success) {
+      throw new Error("invalid request body");
+    }
+
+    return validated.data;
+  };
+
   it("careerStoriesとskillsをPOST payloadへ含める", async () => {
     vi.stubGlobal(
       "fetch",
@@ -58,14 +83,7 @@ describe("portfolioApi.savePortfolio", () => {
 
     const fetchMock = vi.mocked(fetch);
     const call = fetchMock.mock.calls[0];
-    const requestBody = JSON.parse(call?.[1]?.body as string) as {
-      settings: {
-        profile: {
-          careerStories: Array<{ id: string; title: string }>;
-          skills: string[];
-        };
-      };
-    };
+    const requestBody = parseRequestBody(call?.[1]?.body);
 
     expect(requestBody.settings.profile.careerStories[0]).toMatchObject({
       id: "career-1",

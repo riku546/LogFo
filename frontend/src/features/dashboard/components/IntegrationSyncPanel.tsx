@@ -30,13 +30,13 @@ export const IntegrationSyncPanel = () => {
       });
 
       if (!res.ok) {
-        const errorData = (await res.json()) as { message?: string };
+        const errorData: { message?: string } = await res.json();
         throw new Error(
           errorData?.message || "Failed to get authorization url",
         );
       }
 
-      const data = (await res.json()) as { redirectUrl?: string };
+      const data: { redirectUrl?: string } = await res.json();
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       }
@@ -55,8 +55,7 @@ export const IntegrationSyncPanel = () => {
       alert(`${provider}の同期が完了しました`);
     } catch (e: unknown) {
       console.error(e);
-      const error = e as { status?: number };
-      if (error.status === 401) {
+      if (isStatusError(e) && e.status === 401) {
         isUnauthorized = true;
         // 401の場合は自動で再連携リダイレクトを実行
         console.log(
@@ -169,4 +168,7 @@ export const IntegrationSyncPanel = () => {
       </div>
     </div>
   );
+};
+const isStatusError = (value: unknown): value is { status?: number } => {
+  return typeof value === "object" && value !== null && "status" in value;
 };

@@ -5,6 +5,7 @@ import type {
   UpsertPortfolioInput,
 } from "../../core/application/interfaces/portfolioRepository";
 import type { Portfolio } from "../../core/domain/models/portfolio";
+import { portfolioSettingsSchema } from "../../schema/portfolio";
 import { portfolios } from "../database/schema";
 
 /**
@@ -13,6 +14,19 @@ import { portfolios } from "../database/schema";
  */
 export class DrizzlePortfolioRepository implements PortfolioRepository {
   constructor(private readonly db: DrizzleD1Database) {}
+
+  private toPortfolio(row: typeof portfolios.$inferSelect): Portfolio {
+    const parsedSettings = portfolioSettingsSchema.safeParse(row.settings);
+    return {
+      id: row.id,
+      userId: row.userId,
+      slug: row.slug,
+      isPublic: row.isPublic,
+      settings: parsedSettings.success ? parsedSettings.data : null,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
 
   /**
    * ポートフォリオをUPSERTします。
@@ -65,7 +79,7 @@ export class DrizzlePortfolioRepository implements PortfolioRepository {
     const row = rows[0];
     if (!row) return undefined;
 
-    return row as unknown as Portfolio;
+    return this.toPortfolio(row);
   }
 
   /**
@@ -83,7 +97,7 @@ export class DrizzlePortfolioRepository implements PortfolioRepository {
     const row = rows[0];
     if (!row) return undefined;
 
-    return row as unknown as Portfolio;
+    return this.toPortfolio(row);
   }
 
   /**

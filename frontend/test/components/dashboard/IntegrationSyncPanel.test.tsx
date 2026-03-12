@@ -8,11 +8,15 @@ describe("IntegrationSyncPanel", () => {
   beforeEach(() => {
     // location のモック（location.href 代入時のエラー回避）
     originalWindowLocation = window.location;
-    delete (window as any).location;
-    window.location = {
-      ...originalWindowLocation,
-      href: "http://localhost/",
-    } as any;
+    Reflect.deleteProperty(window, "location");
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: {
+        ...originalWindowLocation,
+        href: "http://localhost/",
+      },
+    });
 
     // fetch のモック
     vi.stubGlobal(
@@ -35,7 +39,11 @@ describe("IntegrationSyncPanel", () => {
   });
 
   afterEach(() => {
-    window.location = originalWindowLocation as any;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: originalWindowLocation,
+    });
     vi.restoreAllMocks();
   });
 
