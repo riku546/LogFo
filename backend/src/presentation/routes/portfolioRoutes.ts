@@ -3,16 +3,16 @@ import { zValidator } from "@hono/zod-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { GetPortfolioUsecase } from "../../core/application/usecases/getPortfolioUsecase";
+import { GetPortfolioUsecase } from "../../core/application/usecases/portfolio/getPortfolioUsecase";
 import {
   GetPublicPortfolioUsecase,
   PortfolioNotFoundError,
   PortfolioNotPublicError,
-} from "../../core/application/usecases/getPublicPortfolioUsecase";
+} from "../../core/application/usecases/portfolio/getPublicPortfolioUsecase";
 import {
   SavePortfolioUsecase,
   SlugAlreadyTakenError,
-} from "../../core/application/usecases/savePortfolioUsecase";
+} from "../../core/application/usecases/portfolio/savePortfolioUsecase";
 import { DrizzlePortfolioRepository } from "../../infrastructure/repositories/drizzlePortfolioRepository";
 import { DrizzleRoadmapRepository } from "../../infrastructure/repositories/drizzleRoadmapRepository";
 import { DrizzleSummaryRepository } from "../../infrastructure/repositories/drizzleSummaryRepository";

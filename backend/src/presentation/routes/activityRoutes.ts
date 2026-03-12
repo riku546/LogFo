@@ -4,14 +4,14 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { CreateActivityLogUsecase } from "../../core/application/usecases/createActivityLogUsecase";
-import { DeleteActivityLogUsecase } from "../../core/application/usecases/deleteActivityLogUsecase";
+import { CreateActivityLogUsecase } from "../../core/application/usecases/activity/createActivityLogUsecase";
+import { DeleteActivityLogUsecase } from "../../core/application/usecases/activity/deleteActivityLogUsecase";
 import {
   ActivityLogAccessDeniedError,
   ActivityLogNotFoundError,
   GetActivityLogsUsecase,
-} from "../../core/application/usecases/getActivityLogsUsecase";
-import { UpdateActivityLogUsecase } from "../../core/application/usecases/updateActivityLogUsecase";
+} from "../../core/application/usecases/activity/getActivityLogsUsecase";
+import { UpdateActivityLogUsecase } from "../../core/application/usecases/activity/updateActivityLogUsecase";
 import { tasks } from "../../infrastructure/database/schema";
 import { DrizzleActivityLogRepository } from "../../infrastructure/repositories/drizzleActivityLogRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";

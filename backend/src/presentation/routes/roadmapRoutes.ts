@@ -4,14 +4,14 @@ import { streamObject } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { DeleteRoadmapUsecase } from "../../core/application/usecases/deleteRoadmapUsecase";
+import { DeleteRoadmapUsecase } from "../../core/application/usecases/roadmap/deleteRoadmapUsecase";
 import {
   GetRoadmapUsecase,
   RoadmapAccessDeniedError,
   RoadmapNotFoundError,
-} from "../../core/application/usecases/getRoadmapUsecase";
-import { SaveRoadmapUsecase } from "../../core/application/usecases/saveRoadmapUsecase";
-import { UpdateRoadmapUsecase } from "../../core/application/usecases/updateRoadmapUsecase";
+} from "../../core/application/usecases/roadmap/getRoadmapUsecase";
+import { SaveRoadmapUsecase } from "../../core/application/usecases/roadmap/saveRoadmapUsecase";
+import { UpdateRoadmapUsecase } from "../../core/application/usecases/roadmap/updateRoadmapUsecase";
 import { getRoadmapLLM } from "../../infrastructure/ai/llmProvider";
 import { buildRoadmapSystemPrompt } from "../../infrastructure/ai/prompts/roadmapSystemPrompt";
 import { extractPdfText } from "../../infrastructure/pdf/pdfParser";

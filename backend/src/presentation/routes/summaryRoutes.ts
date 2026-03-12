@@ -4,18 +4,18 @@ import { streamText } from "ai";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { DeleteSummaryUsecase } from "../../core/application/usecases/deleteSummaryUsecase";
+import { DeleteSummaryUsecase } from "../../core/application/usecases/summary/deleteSummaryUsecase";
 import {
   GenerateSummaryUsecase,
   NoActivityLogsError,
-} from "../../core/application/usecases/generateSummaryUsecase";
+} from "../../core/application/usecases/summary/generateSummaryUsecase";
 import {
   GetSummariesUsecase,
   SummaryAccessDeniedError,
   SummaryNotFoundError,
-} from "../../core/application/usecases/getSummariesUsecase";
-import { SaveSummaryUsecase } from "../../core/application/usecases/saveSummaryUsecase";
-import { UpdateSummaryUsecase } from "../../core/application/usecases/updateSummaryUsecase";
+} from "../../core/application/usecases/summary/getSummariesUsecase";
+import { SaveSummaryUsecase } from "../../core/application/usecases/summary/saveSummaryUsecase";
+import { UpdateSummaryUsecase } from "../../core/application/usecases/summary/updateSummaryUsecase";
 import { getSummaryLLM } from "../../infrastructure/ai/llmProvider";
 import { buildSummarySystemPrompt } from "../../infrastructure/ai/prompts/summarySystemPrompt";
 import { DrizzleActivityLogRepository } from "../../infrastructure/repositories/drizzleActivityLogRepository";
