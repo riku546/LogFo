@@ -244,7 +244,9 @@ export const portfolios = sqliteTable("portfolios", {
     .references(() => users.id, { onDelete: "cascade" }),
   slug: text("slug").notNull().unique(), // パブリックURL末尾 (logfo.app/[slug])
   isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
-  settings: text("settings", { mode: "json" }), // どのサマリ・ウィジェットを表示するかのJSON設定
+  // どのサマリ・ウィジェットを表示するかのJSON設定
+  // スキル、経歴も格納している(今後の要件に応じて、テーブルに切り出すかを検討)
+  settings: text("settings", { mode: "json" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

@@ -54,14 +54,14 @@ export interface SaveRoadmapPayload {
   currentState: string;
   goalState: string;
   pdfContext: string | null;
-  summary: string;
+  summary: string | null;
   milestones: Array<{
     title: string;
-    description?: string;
+    description?: string | null;
     orderIndex: number;
     tasks: Array<{
       title: string;
-      estimatedHours?: number;
+      estimatedHours?: number | null;
       orderIndex: number;
     }>;
   }>;
@@ -86,6 +86,33 @@ export interface UpdateRoadmapPayload {
       orderIndex: number;
     }>;
   }>;
+}
+
+/**
+ * 手入力ロードマップのタスク入力データ。
+ */
+export interface ManualRoadmapTaskInput {
+  title: string;
+  estimatedHours: number | null;
+}
+
+/**
+ * 手入力ロードマップのマイルストーン入力データ。
+ */
+export interface ManualRoadmapMilestoneInput {
+  title: string;
+  description: string;
+  tasks: ManualRoadmapTaskInput[];
+}
+
+/**
+ * 手入力ロードマップ保存前の入力データ。
+ */
+export interface ManualRoadmapInput {
+  currentState: string;
+  goalState: string;
+  summary: string;
+  milestones: ManualRoadmapMilestoneInput[];
 }
 
 // ===== APIエラー =====
@@ -120,6 +147,28 @@ const normalizeSaveRoadmapPayload = (payload: SaveRoadmapPayload) => ({
     tasks: milestone.tasks.map((task) => ({
       ...task,
       estimatedHours: task.estimatedHours ?? null,
+    })),
+  })),
+});
+
+/**
+ * 手入力ロードマップ編集データを保存APIのペイロードに変換する
+ */
+export const buildSaveRoadmapPayloadFromManualInput = (
+  input: ManualRoadmapInput,
+): SaveRoadmapPayload => ({
+  currentState: input.currentState.trim(),
+  goalState: input.goalState.trim(),
+  pdfContext: null,
+  summary: input.summary.trim() ? input.summary.trim() : null,
+  milestones: input.milestones.map((milestone, milestoneIndex) => ({
+    title: milestone.title.trim(),
+    description: milestone.description.trim(),
+    orderIndex: milestoneIndex,
+    tasks: milestone.tasks.map((task, taskIndex) => ({
+      title: task.title.trim(),
+      estimatedHours: task.estimatedHours,
+      orderIndex: taskIndex,
     })),
   })),
 });
