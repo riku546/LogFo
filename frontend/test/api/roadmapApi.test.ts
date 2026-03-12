@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildSaveRoadmapPayloadFromManualInput,
   fetchRoadmapList,
   RoadmapApiError,
   roadmapGenerateFetch,
@@ -32,5 +33,41 @@ describe("roadmapApi", () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(request, { method: "POST" });
+  });
+
+  it("手入力データを保存ペイロードへ変換できる", () => {
+    const payload = buildSaveRoadmapPayloadFromManualInput({
+      currentState: "  現在地  ",
+      goalState: "  目標  ",
+      summary: "  サマリー  ",
+      milestones: [
+        {
+          title: "  マイルストーン  ",
+          description: "  補足  ",
+          tasks: [{ title: "  タスク  ", estimatedHours: 5 }],
+        },
+      ],
+    });
+
+    expect(payload).toEqual({
+      currentState: "現在地",
+      goalState: "目標",
+      pdfContext: null,
+      summary: "サマリー",
+      milestones: [
+        {
+          title: "マイルストーン",
+          description: "補足",
+          orderIndex: 0,
+          tasks: [
+            {
+              title: "タスク",
+              estimatedHours: 5,
+              orderIndex: 0,
+            },
+          ],
+        },
+      ],
+    });
   });
 });
