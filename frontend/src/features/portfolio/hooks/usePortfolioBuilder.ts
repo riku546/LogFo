@@ -33,9 +33,16 @@ const createDefaultSettings = (): PortfolioSettings => ({
     careerStories: [],
     skills: [],
   },
-  sections: {
-    roadmapIds: [],
-    summaryIds: [],
+  generation: {
+    selectedSummaryIds: [],
+    chatInput: "",
+    targetSection: "selfPr",
+  },
+  generatedContent: {
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
   },
 });
 
@@ -49,6 +56,11 @@ const normalizePortfolioSettings = (
   settings: PortfolioSettings,
 ): PortfolioSettings => {
   const defaultSettings = createDefaultSettings();
+  const legacySelfPrDraft = (
+    settings.generation as PortfolioSettings["generation"] & {
+      selfPrDraft?: string;
+    }
+  )?.selfPrDraft;
 
   return {
     ...defaultSettings,
@@ -63,11 +75,20 @@ const normalizePortfolioSettings = (
       careerStories: settings.profile.careerStories ?? [],
       skills: settings.profile.skills ?? [],
     },
-    sections: {
-      ...defaultSettings.sections,
-      ...settings.sections,
-      roadmapIds: settings.sections?.roadmapIds ?? [],
-      summaryIds: settings.sections?.summaryIds ?? [],
+    generation: {
+      ...defaultSettings.generation,
+      ...settings.generation,
+      selectedSummaryIds: settings.generation?.selectedSummaryIds ?? [],
+      chatInput: settings.generation?.chatInput ?? legacySelfPrDraft ?? "",
+      targetSection: settings.generation?.targetSection ?? "selfPr",
+    },
+    generatedContent: {
+      ...defaultSettings.generatedContent,
+      ...settings.generatedContent,
+      selfPr: settings.generatedContent?.selfPr ?? "",
+      strengths: settings.generatedContent?.strengths ?? "",
+      learnings: settings.generatedContent?.learnings ?? "",
+      futureVision: settings.generatedContent?.futureVision ?? "",
     },
   };
 };
@@ -76,7 +97,7 @@ const normalizePortfolioSettings = (
  * ポートフォリオビルダーの状態管理・保存を行うカスタムフック
  *
  * Usage:
- * const { settings, slug, isPublic, updateProfile, updateSections, handleSave, isLoading, isSaving }
+ * const { settings, slug, isPublic, updateProfile, updateGeneration, handleSave, isLoading, isSaving }
  *   = usePortfolioBuilder();
  */
 export const usePortfolioBuilder = () => {
@@ -158,13 +179,29 @@ export const usePortfolioBuilder = () => {
   );
 
   /**
-   * セクション設定を部分更新する
+   * AI生成入力設定を部分更新する
    */
-  const updateSections = useCallback(
-    (updates: Partial<PortfolioSettings["sections"]>) => {
+  const updateGeneration = useCallback(
+    (updates: Partial<PortfolioSettings["generation"]>) => {
       setSettings((prev) => ({
         ...prev,
-        sections: { ...prev.sections, ...updates },
+        generation: { ...prev.generation, ...updates },
+      }));
+    },
+    [],
+  );
+
+  /**
+   * AI生成文章を部分更新する
+   */
+  const updateGeneratedContent = useCallback(
+    (updates: Partial<PortfolioSettings["generatedContent"]>) => {
+      setSettings((prev) => ({
+        ...prev,
+        generatedContent: {
+          ...prev.generatedContent,
+          ...updates,
+        },
       }));
     },
     [],
@@ -232,7 +269,8 @@ export const usePortfolioBuilder = () => {
     setIsPublic,
     updateProfile,
     updateSocialLinks,
-    updateSections,
+    updateGeneration,
+    updateGeneratedContent,
     handleSave,
   };
 };

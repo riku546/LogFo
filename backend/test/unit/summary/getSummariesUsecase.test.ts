@@ -6,7 +6,9 @@ const createMockRepository = () =>
   ({
     create: vi.fn<SummaryRepository["create"]>(),
     findByMilestoneId: vi.fn<SummaryRepository["findByMilestoneId"]>(),
+    findByUserId: vi.fn<SummaryRepository["findByUserId"]>(),
     findById: vi.fn<SummaryRepository["findById"]>(),
+    findByIdsForUser: vi.fn<SummaryRepository["findByIdsForUser"]>(),
     update: vi.fn<SummaryRepository["update"]>(),
     delete: vi.fn<SummaryRepository["delete"]>(),
     isOwner: vi.fn<SummaryRepository["isOwner"]>(),

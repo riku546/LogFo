@@ -34,9 +34,16 @@ const createPayload = (): SavePortfolioPayload => ({
       ],
       skills: ["React", "TypeScript"],
     },
-    sections: {
-      roadmapIds: [],
-      summaryIds: [],
+    generation: {
+      selectedSummaryIds: [],
+      chatInput: "",
+      targetSection: "selfPr",
+    },
+    generatedContent: {
+      selfPr: "",
+      strengths: "",
+      learnings: "",
+      futureVision: "",
     },
   },
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { DropzoneInputProps, DropzoneRootProps } from "react-dropzone";
 import { RoadmapResult } from "@/features/roadmap/components/RoadmapResult";
 import { useRoadmapGenerate } from "@/features/roadmap/hooks/useRoadmapGenerate";
@@ -43,7 +44,7 @@ const CurrentStateSection = ({
   dailyStudyHours,
   setDailyStudyHours,
 }: CurrentStateSectionProps) => (
-  <section className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+  <section className="glass rounded-2xl p-6">
     <h2 className="mb-5 text-lg font-bold text-slate-800 dark:text-slate-100">
       あなたの現在の状態
     </h2>
@@ -77,7 +78,7 @@ const CurrentStateSection = ({
               key={skill}
               type="button"
               onClick={() => toggleSkill(skill)}
-              className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+              className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-300 ${
                 currentSkills.includes(skill)
                   ? "bg-blue-500 text-white shadow-md"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -154,7 +155,7 @@ const TargetSection = ({
   targetPeriodMonths,
   setTargetPeriodMonths,
 }: TargetSectionProps) => (
-  <section className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+  <section className="glass rounded-2xl p-6">
     <h2 className="mb-5 text-lg font-bold text-slate-800 dark:text-slate-100">
       あなたの目標
     </h2>
@@ -260,7 +261,7 @@ const PdfUploadSection = ({
   isCompanyDragActive,
   companyPdfFile,
 }: PdfUploadSectionProps) => (
-  <section className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+  <section className="glass rounded-2xl p-6">
     <h2 className="mb-5 text-lg font-bold text-slate-800 dark:text-slate-100">
       参考資料（任意）
     </h2>
@@ -387,11 +388,20 @@ export default function RoadmapGeneratePage() {
   } = companyDropzone;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+    <div className="min-h-screen bg-background py-12">
       <div className="mx-auto max-w-4xl px-4">
+        <div className="mb-6">
+          <Link
+            href="/roadmap"
+            className="cursor-pointer text-sm font-medium text-blue-600 transition-colors duration-300 hover:text-blue-700"
+          >
+            ← ロードマップ一覧に戻る
+          </Link>
+        </div>
+
         {/* ヘッダー */}
         <div className="mb-10 text-center">
-          <h1 className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
             学習ロードマップ生成
           </h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">
@@ -448,7 +458,7 @@ export default function RoadmapGeneratePage() {
             <button
               type="submit"
               disabled={isGenerating}
-              className="w-full cursor-pointer rounded-xl bg-linear-to-r from-blue-500 to-indigo-500 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all hover:from-blue-600 hover:to-indigo-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full cursor-pointer rounded-xl bg-blue-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGenerating ? (
                 <span className="flex items-center justify-center gap-2">

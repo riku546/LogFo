@@ -30,9 +30,15 @@ const settings: PortfolioSettings = {
     careerStories: [],
     skills: [],
   },
-  sections: {
-    roadmapIds: [],
-    summaryIds: [],
+  generation: {
+    selectedSummaryIds: [],
+    selfPrDraft: "",
+  },
+  generatedContent: {
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
   },
 };
 

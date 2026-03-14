@@ -57,7 +57,7 @@ export const ManualRoadmapEditor = ({
 }: ManualRoadmapEditorProps) => {
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white/85 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <section className="glass rounded-2xl p-6">
         <h2 className="mb-4 text-lg font-bold text-slate-900 dark:text-slate-100">
           基本情報
         </h2>
@@ -113,7 +113,7 @@ export const ManualRoadmapEditor = ({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white/85 p-6 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <section className="glass rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             マイルストーン
@@ -121,7 +121,7 @@ export const ManualRoadmapEditor = ({
           <button
             type="button"
             onClick={onAddMilestone}
-            className="cursor-pointer rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+            className="cursor-pointer rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-all duration-300 hover:bg-primary/15"
           >
             マイルストーンを追加
           </button>
@@ -131,7 +131,7 @@ export const ManualRoadmapEditor = ({
           {milestones.map((milestone, milestoneIndex) => (
             <article
               key={milestone.clientId}
-              className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800/70"
+              className="rounded-xl border border-white/50 bg-white/70 p-4 backdrop-blur-sm dark:border-white/15 dark:bg-slate-900/60"
             >
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -240,7 +240,7 @@ export const ManualRoadmapEditor = ({
         type="button"
         onClick={onSave}
         disabled={isSaving}
-        className="w-full cursor-pointer rounded-xl bg-linear-to-r from-blue-500 to-indigo-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:from-blue-600 hover:to-indigo-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full cursor-pointer rounded-xl bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:bg-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSaving ? "保存中..." : "この内容で保存する"}
       </button>

@@ -14,6 +14,7 @@ import {
   SummaryAccessDeniedError,
   SummaryNotFoundError,
 } from "../../core/application/usecases/summary/getSummariesUsecase";
+import { GetUserSummariesUsecase } from "../../core/application/usecases/summary/getUserSummariesUsecase";
 import { SaveSummaryUsecase } from "../../core/application/usecases/summary/saveSummaryUsecase";
 import { UpdateSummaryUsecase } from "../../core/application/usecases/summary/updateSummaryUsecase";
 import { getSummaryLLM } from "../../infrastructure/ai/llmProvider";
@@ -150,6 +151,18 @@ export const createSummaryRoutes = () => {
           return c.json({ summaryId }, 201);
         },
       )
+
+      // ===== 自分のサマリー一覧取得 =====
+      .get("/summary", async (c) => {
+        const userId = getUserIdFromJwt(c);
+
+        const db = drizzle(c.env.DB);
+        const summaryRepository = new DrizzleSummaryRepository(db);
+        const usecase = new GetUserSummariesUsecase(summaryRepository);
+        const summaryList = await usecase.execute(userId);
+
+        return c.json({ summaries: summaryList });
+      })
 
       // ===== マイルストーン別サマリー一覧取得 =====
       .get("/summary/milestone/:milestoneId", async (c) => {

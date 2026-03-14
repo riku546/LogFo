@@ -40,11 +40,37 @@ export const profileSettingsSchema = z.object({
 });
 
 /**
- * セクション表示設定スキーマ（ID配列で表示対象を指定）
+ * プロフィール設定型
  */
-export const sectionSettingsSchema = z.object({
-  roadmapIds: z.array(z.string()).optional().default([]),
-  summaryIds: z.array(z.string()).optional().default([]),
+export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
+
+/**
+ * AI生成対象セクションの列挙
+ */
+export const portfolioGeneratedSectionEnum = z.enum([
+  "selfPr",
+  "strengths",
+  "learnings",
+  "futureVision",
+]);
+
+/**
+ * AI文章生成の入力設定スキーマ
+ */
+export const portfolioGenerationSettingsSchema = z.object({
+  selectedSummaryIds: z.array(z.string()).max(5).optional().default([]),
+  chatInput: z.string().optional().default(""),
+  targetSection: portfolioGeneratedSectionEnum.optional().default("selfPr"),
+});
+
+/**
+ * ポートフォリオで表示するAI生成文章スキーマ
+ */
+export const portfolioGeneratedContentSchema = z.object({
+  selfPr: z.string().optional().default(""),
+  strengths: z.string().optional().default(""),
+  learnings: z.string().optional().default(""),
+  futureVision: z.string().optional().default(""),
 });
 
 /**
@@ -52,9 +78,17 @@ export const sectionSettingsSchema = z.object({
  */
 export const portfolioSettingsSchema = z.object({
   profile: profileSettingsSchema,
-  sections: sectionSettingsSchema
-    .optional()
-    .default({ roadmapIds: [], summaryIds: [] }),
+  generation: portfolioGenerationSettingsSchema.optional().default({
+    selectedSummaryIds: [],
+    chatInput: "",
+    targetSection: "selfPr",
+  }),
+  generatedContent: portfolioGeneratedContentSchema.optional().default({
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
+  }),
 });
 
 /**
@@ -82,3 +116,42 @@ export const savePortfolioRequestSchema = z.object({
  * ポートフォリオ保存APIのリクエスト型
  */
 export type SavePortfolioRequest = z.infer<typeof savePortfolioRequestSchema>;
+
+/**
+ * AI文章生成APIのリクエストスキーマ
+ */
+export const generatePortfolioContentRequestSchema = z.object({
+  chatInput: z.string().trim().min(1, "自由入力テキストを入力してください"),
+  targetSection: portfolioGeneratedSectionEnum,
+  selectedSummaryIds: z
+    .array(z.string().min(1))
+    .max(5, "サマリーは最大5件まで選択できます"),
+  profile: profileSettingsSchema,
+  currentContent: portfolioGeneratedContentSchema.optional().default({
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
+  }),
+});
+
+/**
+ * AI文章生成APIのリクエスト型
+ */
+export type GeneratePortfolioContentRequest = z.infer<
+  typeof generatePortfolioContentRequestSchema
+>;
+
+/**
+ * AI生成対象セクション型
+ */
+export type PortfolioGeneratedSectionKey = z.infer<
+  typeof portfolioGeneratedSectionEnum
+>;
+
+/**
+ * AI生成文章型
+ */
+export type PortfolioGeneratedContent = z.infer<
+  typeof portfolioGeneratedContentSchema
+>;

@@ -31,12 +31,29 @@ export interface SummaryRepository {
   findByMilestoneId(milestoneId: string): Promise<Summary[]>;
 
   /**
+   * ユーザーIDに紐づくサマリー一覧を作成日時降順で取得します。
+   *
+   * @param userId - ユーザーID
+   * @returns サマリーの配列
+   */
+  findByUserId(userId: string): Promise<Summary[]>;
+
+  /**
    * IDでサマリーを1件取得します。
    *
    * @param summaryId - サマリーのID
    * @returns サマリーデータ、存在しない場合はundefined
    */
   findById(summaryId: string): Promise<Summary | undefined>;
+
+  /**
+   * 指定ユーザーが所有するサマリーをID配列で取得します。
+   *
+   * @param userId - ユーザーID
+   * @param summaryIds - サマリーID配列
+   * @returns 取得できたサマリー一覧
+   */
+  findByIdsForUser(userId: string, summaryIds: string[]): Promise<Summary[]>;
 
   /**
    * サマリーのタイトルと内容を更新します。

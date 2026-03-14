@@ -14,26 +14,19 @@ describe("Home Component", () => {
     render(React.createElement(Home));
 
     // メインコピーの確認
-    expect(screen.getByText("学習の軌跡を、信頼に。")).toBeInTheDocument();
+    expect(screen.getByText("学習の軌跡を信頼に。")).toBeInTheDocument();
 
     // 説明文の確認
     expect(
-      screen.getByText(
-        "日々の学習ログを、信頼できるポートフォリオに変換します。",
-      ),
+      screen.getByText("日々の学習ログをポートフォリオに。"),
     ).toBeInTheDocument();
   });
 
-  it("利用開始ボタンとプロジェクト閲覧ボタンが表示されること", () => {
+  it("利用開始リンクが表示されること", () => {
     render(React.createElement(Home));
 
-    // ボタンの確認 (role="button" を持つ要素を探す)
-    const startButton = screen.getByRole("button", { name: "無料で始める" });
-    const projectButton = screen.getByRole("button", {
-      name: "プロジェクトを見る",
-    });
-
-    expect(startButton).toBeInTheDocument();
-    expect(projectButton).toBeInTheDocument();
+    const startLink = screen.getByRole("link", { name: "無料で始める" });
+    expect(startLink).toBeInTheDocument();
+    expect(startLink).toHaveAttribute("href", "/signin");
   });
 });

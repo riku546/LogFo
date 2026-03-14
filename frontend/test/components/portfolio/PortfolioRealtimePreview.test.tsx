@@ -1,34 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { PortfolioSettings } from "@/features/portfolio/api/portfolioApi";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
-import type { RoadmapListItem } from "@/features/roadmap/api/roadmapApi";
-import type { SummaryItem } from "@/features/summary/api/summaryApi";
-
-const availableRoadmaps: RoadmapListItem[] = [
-  {
-    id: "roadmap-1",
-    currentState: "現状A",
-    goalState: "ロードマップA",
-    summary: "ロードマップ要約A",
-    createdAt: "2026-03-01T00:00:00.000Z",
-    updatedAt: "2026-03-01T00:00:00.000Z",
-  },
-];
-
-const availableSummaries: SummaryItem[] = [
-  {
-    id: "summary-1",
-    userId: "user-1",
-    milestoneId: "milestone-1",
-    title: "サマリーA",
-    content: "サマリー本文A",
-    createdAt: "2026-03-01T00:00:00.000Z",
-    updatedAt: "2026-03-01T00:00:00.000Z",
-  },
-];
 
 const createInitialSettings = (): PortfolioSettings => ({
   profile: {
@@ -46,9 +21,16 @@ const createInitialSettings = (): PortfolioSettings => ({
     careerStories: [],
     skills: [],
   },
-  sections: {
-    roadmapIds: [],
-    summaryIds: [],
+  generation: {
+    selectedSummaryIds: [],
+    chatInput: "",
+    targetSection: "selfPr",
+  },
+  generatedContent: {
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
   },
 });
 
@@ -56,31 +38,62 @@ const PreviewHarness = () => {
   const [settings, setSettings] = useState<PortfolioSettings>(
     createInitialSettings(),
   );
-
-  const selectedRoadmaps = useMemo(() => {
-    const roadmapById = new Map(
-      availableRoadmaps.map((roadmap) => [roadmap.id, roadmap]),
-    );
-
-    return settings.sections.roadmapIds
-      .map((roadmapId) => roadmapById.get(roadmapId))
-      .filter((roadmap): roadmap is RoadmapListItem => roadmap !== undefined);
-  }, [settings.sections.roadmapIds]);
-
-  const selectedSummaries = useMemo(() => {
-    const summaryById = new Map(
-      availableSummaries.map((summary) => [summary.id, summary]),
-    );
-
-    return settings.sections.summaryIds
-      .map((summaryId) => summaryById.get(summaryId))
-      .filter((summary): summary is SummaryItem => summary !== undefined);
-  }, [settings.sections.summaryIds]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: "assistant-1",
+      role: "assistant" as const,
+      content: "私は継続的な改善を得意とするエンジニアです。",
+      targetSection: "selfPr" as const,
+      status: "done" as const,
+    },
+  ]);
 
   return (
     <div>
       <ConfigSidebar
         settings={settings}
+        onUpdateGeneration={(updates) => {
+          setSettings((prev) => ({
+            ...prev,
+            generation: {
+              ...prev.generation,
+              ...updates,
+            },
+          }));
+        }}
+        isStreaming={false}
+        messages={messages}
+        onOpenSummarySelection={() => {}}
+        onSendMessage={() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${prev.length + 1}`,
+              role: "assistant",
+              content: "私は継続的な改善を得意とするエンジニアです。",
+              targetSection: "selfPr",
+              status: "done",
+            },
+          ]);
+        }}
+        onApplyMessage={(messageId) => {
+          const message = messages.find((item) => item.id === messageId);
+          if (!message) return;
+          setSettings((prev) => ({
+            ...prev,
+            generatedContent: {
+              ...prev.generatedContent,
+              selfPr: message.content,
+            },
+          }));
+        }}
+      />
+
+      <LivePreviewPane
+        settings={settings}
+        isEditing={isEditing}
+        onToggleEditing={() => setIsEditing((prev) => !prev)}
         onUpdateProfile={(updates) => {
           setSettings((prev) => ({
             ...prev,
@@ -102,67 +115,69 @@ const PreviewHarness = () => {
             },
           }));
         }}
-        onUpdateSections={(updates) => {
+        onUpdateGeneratedContent={(updates) => {
           setSettings((prev) => ({
             ...prev,
-            sections: {
-              ...prev.sections,
+            generatedContent: {
+              ...prev.generatedContent,
               ...updates,
             },
           }));
         }}
-        availableSummaries={availableSummaries}
-        availableRoadmaps={availableRoadmaps}
-      />
-
-      <LivePreviewPane
-        settings={settings}
-        summaries={selectedSummaries}
-        roadmaps={selectedRoadmaps}
       />
     </div>
   );
 };
 
 describe("Portfolio realtime preview", () => {
-  it("サマリー/ロードマップ選択が保存前にプレビューへ即時反映される", () => {
+  it("閲覧モードでもPR・強みの4項目を常に表示する", () => {
     render(<PreviewHarness />);
 
-    fireEvent.click(screen.getByLabelText("サマリーA"));
-    fireEvent.click(screen.getByLabelText("ロードマップA"));
-    fireEvent.click(screen.getByRole("button", { name: "ロードマップ" }));
+    fireEvent.click(screen.getByRole("button", { name: "PR・強み" }));
 
-    const previewMain = screen.getByRole("main");
-    expect(within(previewMain).getByText("ロードマップA")).toBeInTheDocument();
-    expect(within(previewMain).getByText("サマリー本文A")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "自己PR" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "強み" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "学び" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "将来" })).toBeInTheDocument();
+    expect(screen.getAllByText("まだ入力されていません")).toHaveLength(4);
   });
 
-  it("経歴ストーリーとスキル入力が保存前にプレビューへ即時反映される", () => {
+  it("生成候補を適用するとプレビューへ即時反映される", () => {
     render(<PreviewHarness />);
 
-    fireEvent.click(screen.getByRole("button", { name: "経歴を追加" }));
-    fireEvent.change(screen.getByLabelText("役割・職種"), {
-      target: { value: "フロントエンドエンジニア" },
+    fireEvent.change(screen.getByLabelText("自由入力テキスト（必須）"), {
+      target: { value: "採用担当向けにPRを生成してください" },
     });
-    fireEvent.change(screen.getByLabelText("所属・組織"), {
-      target: { value: "LogFo" },
-    });
-    fireEvent.change(screen.getByLabelText("ストーリー"), {
-      target: { value: "UI改善を主導しました" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "送信して生成" }));
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "この文章を適用" })[0],
+    );
 
-    fireEvent.change(screen.getByLabelText("スキル入力"), {
-      target: { value: "React" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "スキルを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "PR・強み" }));
 
     const previewMain = screen.getByRole("main");
     expect(
-      within(previewMain).getByText("フロントエンドエンジニア"),
+      within(previewMain).getByText(
+        "私は継続的な改善を得意とするエンジニアです。",
+      ),
     ).toBeInTheDocument();
-    expect(
-      within(previewMain).getByText("UI改善を主導しました"),
-    ).toBeInTheDocument();
-    expect(within(previewMain).getByText("React")).toBeInTheDocument();
+  });
+
+  it("編集モードで中央エリアを編集すると即時反映される", () => {
+    render(<PreviewHarness />);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集モードへ" }));
+
+    const profileInput = screen.getByPlaceholderText("表示名");
+    fireEvent.change(profileInput, {
+      target: { value: "中央編集ユーザー" },
+    });
+
+    const profileTabButton = screen.getByRole("button", {
+      name: "経歴・スキル",
+    });
+    fireEvent.click(profileTabButton);
+
+    expect(screen.getByDisplayValue("中央編集ユーザー")).toBeInTheDocument();
   });
 });

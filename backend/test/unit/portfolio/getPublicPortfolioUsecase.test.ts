@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PortfolioRepository } from "../../../src/core/application/interfaces/portfolioRepository";
-import type { RoadmapRepository } from "../../../src/core/application/interfaces/roadmapRepository";
-import type { SummaryRepository } from "../../../src/core/application/interfaces/summaryRepository";
 import {
   GetPublicPortfolioUsecase,
   PortfolioNotFoundError,
@@ -16,26 +14,6 @@ const createPortfolioRepository = () =>
     findBySlug: vi.fn<PortfolioRepository["findBySlug"]>(),
     isSlugAvailable: vi.fn<PortfolioRepository["isSlugAvailable"]>(),
   }) satisfies PortfolioRepository;
-
-const createSummaryRepository = () =>
-  ({
-    create: vi.fn<SummaryRepository["create"]>(),
-    findByMilestoneId: vi.fn<SummaryRepository["findByMilestoneId"]>(),
-    findById: vi.fn<SummaryRepository["findById"]>(),
-    update: vi.fn<SummaryRepository["update"]>(),
-    delete: vi.fn<SummaryRepository["delete"]>(),
-    isOwner: vi.fn<SummaryRepository["isOwner"]>(),
-  }) satisfies SummaryRepository;
-
-const createRoadmapRepository = () =>
-  ({
-    create: vi.fn<RoadmapRepository["create"]>(),
-    findById: vi.fn<RoadmapRepository["findById"]>(),
-    findByUserId: vi.fn<RoadmapRepository["findByUserId"]>(),
-    update: vi.fn<RoadmapRepository["update"]>(),
-    delete: vi.fn<RoadmapRepository["delete"]>(),
-    isOwner: vi.fn<RoadmapRepository["isOwner"]>(),
-  }) satisfies RoadmapRepository;
 
 const settings: PortfolioSettings = {
   profile: {
@@ -53,17 +31,21 @@ const settings: PortfolioSettings = {
     careerStories: [],
     skills: [],
   },
-  sections: {
-    summaryIds: ["summary-1", "summary-2"],
-    roadmapIds: ["roadmap-1", "roadmap-2"],
+  generation: {
+    selectedSummaryIds: ["summary-1"],
+    selfPrDraft: "",
+  },
+  generatedContent: {
+    selfPr: "自己PR",
+    strengths: "強み",
+    learnings: "学び",
+    futureVision: "将来",
   },
 };
 
 describe("GetPublicPortfolioUsecase", () => {
-  it("公開ポートフォリオと関連データを返す", async () => {
+  it("公開ポートフォリオを返す", async () => {
     const portfolioRepository = createPortfolioRepository();
-    const summaryRepository = createSummaryRepository();
-    const roadmapRepository = createRoadmapRepository();
 
     portfolioRepository.findBySlug.mockResolvedValue({
       id: "portfolio-1",
@@ -75,57 +57,15 @@ describe("GetPublicPortfolioUsecase", () => {
       updatedAt: new Date("2026-03-12"),
     });
 
-    summaryRepository.findById
-      .mockResolvedValueOnce({
-        id: "summary-1",
-        userId: "user-1",
-        milestoneId: "milestone-1",
-        title: "title",
-        content: "content",
-        createdAt: new Date("2026-03-12"),
-        updatedAt: new Date("2026-03-12"),
-      })
-      .mockResolvedValueOnce(undefined);
-
-    roadmapRepository.findById
-      .mockResolvedValueOnce({
-        id: "roadmap-1",
-        userId: "user-1",
-        currentState: "current",
-        goalState: "goal",
-        pdfContext: null,
-        summary: "summary",
-        createdAt: new Date("2026-03-12"),
-        updatedAt: new Date("2026-03-12"),
-        milestones: [],
-      })
-      .mockResolvedValueOnce(undefined);
-
-    const usecase = new GetPublicPortfolioUsecase(
-      portfolioRepository,
-      summaryRepository,
-      roadmapRepository,
-    );
+    const usecase = new GetPublicPortfolioUsecase(portfolioRepository);
 
     const result = await usecase.execute("riku");
     expect(result.slug).toBe("riku");
-    expect(result.summaries).toHaveLength(1);
-    expect(result.roadmaps).toEqual([
-      {
-        id: "roadmap-1",
-        currentState: "current",
-        goalState: "goal",
-        summary: "summary",
-      },
-    ]);
+    expect(result.settings.generatedContent.selfPr).toBe("自己PR");
   });
 
   it("ポートフォリオが存在しない場合はPortfolioNotFoundError", async () => {
-    const usecase = new GetPublicPortfolioUsecase(
-      createPortfolioRepository(),
-      createSummaryRepository(),
-      createRoadmapRepository(),
-    );
+    const usecase = new GetPublicPortfolioUsecase(createPortfolioRepository());
 
     await expect(usecase.execute("missing")).rejects.toThrow(
       PortfolioNotFoundError,
@@ -144,11 +84,7 @@ describe("GetPublicPortfolioUsecase", () => {
       updatedAt: new Date("2026-03-12"),
     });
 
-    const usecase = new GetPublicPortfolioUsecase(
-      portfolioRepository,
-      createSummaryRepository(),
-      createRoadmapRepository(),
-    );
+    const usecase = new GetPublicPortfolioUsecase(portfolioRepository);
 
     await expect(usecase.execute("private")).rejects.toThrow(
       PortfolioNotPublicError,
