@@ -1,15 +1,10 @@
 "use client";
 
-import type {
-  PortfolioSettings,
-  PublicPortfolioData,
-} from "../api/portfolioApi";
+import type { PortfolioSettings } from "../api/portfolioApi";
 import { PortfolioPublicView } from "./PortfolioPublicView";
 
 export interface LivePreviewPaneProps {
   settings: PortfolioSettings;
-  summaries?: PublicPortfolioData["summaries"];
-  roadmaps?: PublicPortfolioData["roadmaps"];
 }
 
 /**
@@ -19,11 +14,7 @@ export interface LivePreviewPaneProps {
  * Usage:
  * <LivePreviewPane settings={settings} />
  */
-export const LivePreviewPane = ({
-  settings,
-  summaries = [],
-  roadmaps = [],
-}: LivePreviewPaneProps) => {
+export const LivePreviewPane = ({ settings }: LivePreviewPaneProps) => {
   return (
     <div className="relative flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 min-h-0">
       <div className="absolute top-6 right-10 h-44 w-44 rounded-full bg-blue-400/15 blur-3xl" />
@@ -38,11 +29,7 @@ export const LivePreviewPane = ({
         </div>
 
         <div className="glass rounded-2xl border border-white/50 dark:border-white/15 shadow-xl overflow-hidden">
-          <PortfolioPublicView
-            settings={settings}
-            summaries={summaries}
-            roadmaps={roadmaps}
-          />
+          <PortfolioPublicView settings={settings} />
         </div>
       </div>
     </div>

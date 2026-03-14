@@ -224,6 +224,39 @@ describe("Summary API Integration Test", () => {
       expect(body.summaries).toHaveLength(0);
     });
   });
+  describe("summary list by user (GET /api/summary)", () => {
+    it("ログインユーザーのサマリー一覧を返す", async () => {
+      const token = await getAuthToken("summary-user-list@example.com");
+      const { milestoneId } = await createTestRoadmapAndGetIds(token);
+
+      await SELF.fetch("http://localhost:8787/api/summary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          milestoneId,
+          title: "my summary",
+          content: "my content",
+        }),
+      });
+
+      const response = await SELF.fetch("http://localhost:8787/api/summary", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(response.status).toBe(200);
+      const body: {
+        summaries: Array<{ title: string | null }>;
+      } = await response.json();
+      expect(body.summaries.length).toBeGreaterThan(0);
+      expect(
+        body.summaries.some((summary) => summary.title === "my summary"),
+      ).toBe(true);
+    });
+  });
   describe("summary update (PUT /api/summary/:id)", () => {
     it("update summary successfully", async () => {
       const token = await getAuthToken("summary-update@example.com");

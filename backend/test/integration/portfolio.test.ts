@@ -50,12 +50,95 @@ const createTestSettings = (overrides = {}) => ({
     ],
     skills: ["React", "TypeScript"],
   },
-  sections: {
-    roadmapIds: [],
-    summaryIds: [],
+  generation: {
+    selectedSummaryIds: [],
+    selfPrDraft: "",
+  },
+  generatedContent: {
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
   },
   ...overrides,
 });
+
+/**
+ * テスト用サマリーを作成してIDを返す
+ */
+const createSummaryForUser = async (
+  token: string,
+  title: string,
+): Promise<string> => {
+  const roadmapResponse = await SELF.fetch(
+    "http://localhost:8787/api/roadmap",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentState: "portfolio test current",
+        goalState: "portfolio test goal",
+        pdfContext: null,
+        summary: "portfolio test roadmap summary",
+        milestones: [
+          {
+            title: "portfolio test milestone",
+            description: "portfolio test milestone description",
+            orderIndex: 0,
+            tasks: [
+              {
+                title: "portfolio test task",
+                estimatedHours: 1,
+                orderIndex: 0,
+              },
+            ],
+          },
+        ],
+      }),
+    },
+  );
+  const roadmapBody: {
+    roadmapId: string;
+  } = await roadmapResponse.json();
+
+  const roadmapDetailResponse = await SELF.fetch(
+    `http://localhost:8787/api/roadmap/${roadmapBody.roadmapId}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  const roadmapDetailBody: {
+    roadmap: {
+      milestones: Array<{ id: string }>;
+    };
+  } = await roadmapDetailResponse.json();
+  const milestoneId = roadmapDetailBody.roadmap.milestones[0].id;
+
+  const summaryResponse = await SELF.fetch(
+    "http://localhost:8787/api/summary",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        milestoneId,
+        title,
+        content: `${title} content`,
+      }),
+    },
+  );
+  const summaryBody: {
+    summaryId: string;
+  } = await summaryResponse.json();
+
+  return summaryBody.summaryId;
+};
 describe("Portfolio API Integration Test", () => {
   describe("portfolio save (POST /api/portfolio)", () => {
     it("save portfolio successfully (create)", async () => {
@@ -197,6 +280,74 @@ describe("Portfolio API Integration Test", () => {
         }),
       });
       expect(response.status).toBe(409);
+    });
+  });
+  describe("portfolio generate (POST /api/portfolio/generate)", () => {
+    it("return 400 when summary and selfPrDraft are both empty", async () => {
+      const token = await getAuthToken(
+        "portfolio-generate-validation@example.com",
+      );
+
+      const response = await SELF.fetch(
+        "http://localhost:8787/api/portfolio/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            selectedSummaryIds: [],
+            selfPrDraft: "",
+            profile: createTestSettings().profile,
+            currentContent: {
+              selfPr: "",
+              strengths: "",
+              learnings: "",
+              futureVision: "",
+            },
+          }),
+        },
+      );
+
+      expect(response.status).toBe(400);
+    });
+
+    it("return 403 when includes summary not owned by user", async () => {
+      const ownerToken = await getAuthToken(
+        "portfolio-generate-owner@example.com",
+      );
+      const attackerToken = await getAuthToken(
+        "portfolio-generate-attacker@example.com",
+      );
+      const otherSummaryId = await createSummaryForUser(
+        ownerToken,
+        "owner summary",
+      );
+
+      const response = await SELF.fetch(
+        "http://localhost:8787/api/portfolio/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${attackerToken}`,
+          },
+          body: JSON.stringify({
+            selectedSummaryIds: [otherSummaryId],
+            selfPrDraft: "",
+            profile: createTestSettings().profile,
+            currentContent: {
+              selfPr: "",
+              strengths: "",
+              learnings: "",
+              futureVision: "",
+            },
+          }),
+        },
+      );
+
+      expect(response.status).toBe(403);
     });
   });
   describe("portfolio get (GET /api/portfolio)", () => {

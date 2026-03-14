@@ -56,9 +56,15 @@ describe("usePortfolioBuilder", () => {
           careerStories: [],
           skills: [],
         },
-        sections: {
-          roadmapIds: ["roadmap-1"],
-          summaryIds: [],
+        generation: {
+          selectedSummaryIds: ["summary-1"],
+          selfPrDraft: "",
+        },
+        generatedContent: {
+          selfPr: "",
+          strengths: "",
+          learnings: "",
+          futureVision: "",
         },
       } as never,
       createdAt: "2026-03-12",

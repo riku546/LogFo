@@ -84,6 +84,28 @@ export const fetchSummariesByMilestone = async (
 };
 
 /**
+ * ログインユーザーのサマリー一覧を取得する
+ */
+export const fetchMySummaries = async (
+  token: string,
+): Promise<SummaryItem[]> => {
+  const response = await client.api.summary.$get(
+    {},
+    { headers: getHeaders(token, false) },
+  );
+
+  if (!response.ok) {
+    throw new SummaryApiError(
+      "サマリー一覧の取得に失敗しました",
+      response.status,
+    );
+  }
+
+  const body: { summaries: SummaryItem[] } = await response.json();
+  return body.summaries;
+};
+
+/**
  * サマリーを保存する
  */
 export const saveSummary = async (

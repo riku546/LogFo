@@ -39,14 +39,22 @@ export interface ProfileSettings {
   skills: string[];
 }
 
-export interface SectionSettings {
-  roadmapIds: string[];
-  summaryIds: string[];
+export interface PortfolioGenerationSettings {
+  selectedSummaryIds: string[];
+  selfPrDraft: string;
+}
+
+export interface PortfolioGeneratedContent {
+  selfPr: string;
+  strengths: string;
+  learnings: string;
+  futureVision: string;
 }
 
 export interface PortfolioSettings {
   profile: ProfileSettings;
-  sections: SectionSettings;
+  generation: PortfolioGenerationSettings;
+  generatedContent: PortfolioGeneratedContent;
 }
 
 export interface PortfolioData {
@@ -68,18 +76,20 @@ export interface SavePortfolioPayload {
 export interface PublicPortfolioData {
   slug: string;
   settings: PortfolioSettings;
-  summaries: Array<{
-    id: string;
-    title: string | null;
-    content: string;
-    createdAt: string;
-  }>;
-  roadmaps: Array<{
-    id: string;
-    currentState: string;
-    goalState: string;
-    summary: string | null;
-  }>;
+}
+
+export type PortfolioGeneratedSectionKey =
+  | "selfPr"
+  | "strengths"
+  | "learnings"
+  | "futureVision";
+
+export interface GeneratePortfolioContentPayload {
+  selectedSummaryIds: string[];
+  selfPrDraft: string;
+  profile: ProfileSettings;
+  currentContent: PortfolioGeneratedContent;
+  targetSection?: PortfolioGeneratedSectionKey;
 }
 
 // ===== APIエラー =====
@@ -199,4 +209,31 @@ export const fetchPublicPortfolio = async (
 
   const body = (await response.json()) as { portfolio: PublicPortfolioData };
   return body.portfolio;
+};
+
+/**
+ * ポートフォリオ向け文章をAI生成する
+ */
+export const generatePortfolioContent = async (
+  token: string,
+  payload: GeneratePortfolioContentPayload,
+): Promise<PortfolioGeneratedContent> => {
+  const response = await client.api.portfolio.generate.$post(
+    {
+      json: payload,
+    },
+    { headers: getHeaders(token) },
+  );
+
+  if (!response.ok) {
+    throw new PortfolioApiError(
+      "ポートフォリオ文章の生成に失敗しました",
+      response.status,
+    );
+  }
+
+  const body = (await response.json()) as {
+    generatedContent: PortfolioGeneratedContent;
+  };
+  return body.generatedContent;
 };

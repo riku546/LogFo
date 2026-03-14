@@ -40,11 +40,26 @@ export const profileSettingsSchema = z.object({
 });
 
 /**
- * セクション表示設定スキーマ（ID配列で表示対象を指定）
+ * プロフィール設定型
  */
-export const sectionSettingsSchema = z.object({
-  roadmapIds: z.array(z.string()).optional().default([]),
-  summaryIds: z.array(z.string()).optional().default([]),
+export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
+
+/**
+ * AI文章生成の入力設定スキーマ
+ */
+export const portfolioGenerationSettingsSchema = z.object({
+  selectedSummaryIds: z.array(z.string()).max(5).optional().default([]),
+  selfPrDraft: z.string().optional().default(""),
+});
+
+/**
+ * ポートフォリオで表示するAI生成文章スキーマ
+ */
+export const portfolioGeneratedContentSchema = z.object({
+  selfPr: z.string().optional().default(""),
+  strengths: z.string().optional().default(""),
+  learnings: z.string().optional().default(""),
+  futureVision: z.string().optional().default(""),
 });
 
 /**
@@ -52,9 +67,15 @@ export const sectionSettingsSchema = z.object({
  */
 export const portfolioSettingsSchema = z.object({
   profile: profileSettingsSchema,
-  sections: sectionSettingsSchema
+  generation: portfolioGenerationSettingsSchema
     .optional()
-    .default({ roadmapIds: [], summaryIds: [] }),
+    .default({ selectedSummaryIds: [], selfPrDraft: "" }),
+  generatedContent: portfolioGeneratedContentSchema.optional().default({
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
+  }),
 });
 
 /**
@@ -82,3 +103,65 @@ export const savePortfolioRequestSchema = z.object({
  * ポートフォリオ保存APIのリクエスト型
  */
 export type SavePortfolioRequest = z.infer<typeof savePortfolioRequestSchema>;
+
+/**
+ * AI生成対象セクションの列挙
+ */
+export const portfolioGeneratedSectionEnum = z.enum([
+  "selfPr",
+  "strengths",
+  "learnings",
+  "futureVision",
+]);
+
+/**
+ * AI文章生成APIのリクエストスキーマ
+ */
+export const generatePortfolioContentRequestSchema = z
+  .object({
+    selectedSummaryIds: z
+      .array(z.string().min(1))
+      .max(5, "サマリーは最大5件まで選択できます"),
+    selfPrDraft: z.string().optional().default(""),
+    profile: profileSettingsSchema,
+    currentContent: portfolioGeneratedContentSchema.optional().default({
+      selfPr: "",
+      strengths: "",
+      learnings: "",
+      futureVision: "",
+    }),
+    targetSection: portfolioGeneratedSectionEnum.optional(),
+  })
+  .superRefine((value, context) => {
+    if (
+      value.selectedSummaryIds.length === 0 &&
+      value.selfPrDraft.trim().length === 0
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "サマリーを1件以上選択するか、自己PR下書きを入力してください",
+        path: ["selfPrDraft"],
+      });
+    }
+  });
+
+/**
+ * AI文章生成APIのリクエスト型
+ */
+export type GeneratePortfolioContentRequest = z.infer<
+  typeof generatePortfolioContentRequestSchema
+>;
+
+/**
+ * AI生成対象セクション型
+ */
+export type PortfolioGeneratedSectionKey = z.infer<
+  typeof portfolioGeneratedSectionEnum
+>;
+
+/**
+ * AI生成文章型
+ */
+export type PortfolioGeneratedContent = z.infer<
+  typeof portfolioGeneratedContentSchema
+>;

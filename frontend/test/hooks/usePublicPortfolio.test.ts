@@ -37,13 +37,17 @@ describe("usePublicPortfolio", () => {
           careerStories: [],
           skills: [],
         },
-        sections: {
-          roadmapIds: [],
-          summaryIds: [],
+        generation: {
+          selectedSummaryIds: [],
+          selfPrDraft: "",
+        },
+        generatedContent: {
+          selfPr: "",
+          strengths: "",
+          learnings: "",
+          futureVision: "",
         },
       },
-      summaries: [],
-      roadmaps: [],
     });
 
     const { result } = renderHook(() => usePublicPortfolio("riku"));

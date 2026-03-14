@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  generatePortfolioContent,
+  PortfolioApiError,
+  type PortfolioGeneratedSectionKey,
+} from "@/features/portfolio/api/portfolioApi";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
 import { PublishSettingsModal } from "@/features/portfolio/components/PublishSettingsModal";
 import { PublishSettingsPanel } from "@/features/portfolio/components/PublishSettingsPanel";
 import { usePortfolioBuilder } from "@/features/portfolio/hooks/usePortfolioBuilder";
-import type { RoadmapListItem } from "@/features/roadmap/api/roadmapApi";
-import {
-  fetchRoadmapDetail,
-  fetchRoadmapList,
-} from "@/features/roadmap/api/roadmapApi";
 import type { SummaryItem } from "@/features/summary/api/summaryApi";
-import { fetchSummariesByMilestone } from "@/features/summary/api/summaryApi";
+import { fetchMySummaries } from "@/features/summary/api/summaryApi";
 
 /**
  * ポートフォリオビルダーページ
@@ -30,80 +31,118 @@ export default function PortfolioBuilderPage() {
     setIsPublic,
     updateProfile,
     updateSocialLinks,
-    updateSections,
+    updateGeneration,
+    updateGeneratedContent,
     handleSave,
   } = usePortfolioBuilder();
 
-  const [availableRoadmaps, setAvailableRoadmaps] = useState<RoadmapListItem[]>(
-    [],
-  );
   const [availableSummaries, setAvailableSummaries] = useState<SummaryItem[]>(
     [],
   );
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-
-  const selectedRoadmaps = useMemo(() => {
-    const roadmapById = new Map(
-      availableRoadmaps.map((roadmap) => [roadmap.id, roadmap]),
-    );
-
-    return settings.sections.roadmapIds
-      .map((roadmapId) => roadmapById.get(roadmapId))
-      .filter((roadmap): roadmap is RoadmapListItem => roadmap !== undefined);
-  }, [availableRoadmaps, settings.sections.roadmapIds]);
-
-  const selectedSummaries = useMemo(() => {
-    const summaryById = new Map(
-      availableSummaries.map((summary) => [summary.id, summary]),
-    );
-
-    return settings.sections.summaryIds
-      .map((summaryId) => summaryById.get(summaryId))
-      .filter((summary): summary is SummaryItem => summary !== undefined);
-  }, [availableSummaries, settings.sections.summaryIds]);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [generatingTargetSection, setGeneratingTargetSection] = useState<
+    PortfolioGeneratedSectionKey | "all" | null
+  >(null);
 
   /**
-   * 選択可能なロードマップとサマリーを読み込む
+   * サマリー選択UI向けデータを読み込む
    */
   useEffect(() => {
-    const fetchAllSummaries = async (
-      token: string,
-      roadmaps: RoadmapListItem[],
-    ) => {
-      const allSummaries: SummaryItem[] = [];
-      for (const roadmap of roadmaps) {
-        const detail = await fetchRoadmapDetail(token, roadmap.id);
-        for (const milestone of detail.milestones) {
-          if (!milestone.id) continue;
-          const summaries = await fetchSummariesByMilestone(
-            token,
-            milestone.id,
-          );
-          allSummaries.push(...summaries);
-        }
-      }
-      return allSummaries;
-    };
-
-    const loadAvailableData = async () => {
+    const loadAvailableSummaries = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
       try {
-        const roadmaps = await fetchRoadmapList(token);
-        setAvailableRoadmaps(roadmaps);
-
-        const summaries = await fetchAllSummaries(token, roadmaps);
+        const summaries = await fetchMySummaries(token);
         setAvailableSummaries(summaries);
       } catch (error) {
-        console.error("Failed to load available data:", error);
+        console.error("Failed to load summaries:", error);
       }
     };
 
     if (!isLoading) {
-      loadAvailableData();
+      loadAvailableSummaries();
     }
   }, [isLoading]);
+
+  /**
+   * 生成時エラーをトーストへ変換する
+   */
+  const handleGenerateError = useCallback((error: unknown) => {
+    if (error instanceof PortfolioApiError && error.statusCode === 400) {
+      toast.error(
+        "サマリーを1件以上選択するか、自己PR下書きを入力してください",
+      );
+      return;
+    }
+
+    if (error instanceof PortfolioApiError && error.statusCode === 403) {
+      toast.error("選択したサマリーにアクセスできません");
+      return;
+    }
+
+    toast.error("ポートフォリオ文章の生成に失敗しました");
+  }, []);
+
+  /**
+   * ローカルストレージからトークンを取得する
+   *
+   * @returns JWTトークン。未ログイン時はnull
+   */
+  const getAuthToken = useCallback((): string | null => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      return token;
+    }
+
+    toast.error("ログインが必要です");
+    return null;
+  }, []);
+
+  /**
+   * AI文章生成を実行する
+   */
+  const handleGenerateContent = useCallback(
+    async (targetSection?: PortfolioGeneratedSectionKey) => {
+      const token = getAuthToken();
+      if (!token) return;
+
+      setIsGeneratingContent(true);
+      setGeneratingTargetSection(targetSection ?? "all");
+
+      try {
+        const generatedContent = await generatePortfolioContent(token, {
+          selectedSummaryIds: settings.generation.selectedSummaryIds,
+          selfPrDraft: settings.generation.selfPrDraft,
+          profile: settings.profile,
+          currentContent: settings.generatedContent,
+          targetSection,
+        });
+
+        updateGeneratedContent(generatedContent);
+        toast.success(
+          targetSection
+            ? "指定した項目を再生成しました"
+            : "ポートフォリオ文章を生成しました",
+        );
+      } catch (error) {
+        handleGenerateError(error);
+      } finally {
+        setIsGeneratingContent(false);
+        setGeneratingTargetSection(null);
+      }
+    },
+    [
+      settings.generation.selectedSummaryIds,
+      settings.generation.selfPrDraft,
+      settings.generatedContent,
+      settings.profile,
+      getAuthToken,
+      handleGenerateError,
+      updateGeneratedContent,
+    ],
+  );
 
   if (isLoading) {
     return (
@@ -125,31 +164,27 @@ export default function PortfolioBuilderPage() {
       <div className="absolute top-12 left-8 h-56 w-56 rounded-full bg-blue-400/15 blur-3xl" />
       <div className="absolute -bottom-10 right-10 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
 
-      {/* メインコンテンツ: サイドバー + プレビュー */}
       <div className="relative flex flex-col lg:flex-row flex-1 min-h-0">
         <ConfigSidebar
           settings={settings}
           onUpdateProfile={updateProfile}
           onUpdateSocialLinks={updateSocialLinks}
-          onUpdateSections={updateSections}
+          onUpdateGeneration={updateGeneration}
+          onUpdateGeneratedContent={updateGeneratedContent}
           availableSummaries={availableSummaries}
-          availableRoadmaps={availableRoadmaps}
+          isGeneratingContent={isGeneratingContent}
+          generatingTargetSection={generatingTargetSection}
+          onGenerateContent={handleGenerateContent}
         />
-        <LivePreviewPane
-          settings={settings}
-          summaries={selectedSummaries}
-          roadmaps={selectedRoadmaps}
-        />
+        <LivePreviewPane settings={settings} />
       </div>
 
-      {/* 下部: アクションバー */}
       <PublishSettingsPanel
         isSaving={isSaving}
         onSave={handleSave}
         onOpenPublishSettings={() => setIsPublishModalOpen(true)}
       />
 
-      {/* 公開設定モーダル */}
       <PublishSettingsModal
         isOpen={isPublishModalOpen}
         onClose={() => setIsPublishModalOpen(false)}

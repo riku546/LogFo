@@ -1,10 +1,12 @@
 "use client";
 
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import type { RoadmapListItem } from "@/features/roadmap/api/roadmapApi";
 import type { SummaryItem } from "@/features/summary/api/summaryApi";
-import type { PortfolioSettings } from "../api/portfolioApi";
+import type {
+  PortfolioGeneratedSectionKey,
+  PortfolioSettings,
+} from "../api/portfolioApi";
 
 export interface ConfigSidebarProps {
   settings: PortfolioSettings;
@@ -12,10 +14,40 @@ export interface ConfigSidebarProps {
   onUpdateSocialLinks: (
     updates: Partial<NonNullable<PortfolioSettings["profile"]["socialLinks"]>>,
   ) => void;
-  onUpdateSections: (updates: Partial<PortfolioSettings["sections"]>) => void;
+  onUpdateGeneration: (
+    updates: Partial<PortfolioSettings["generation"]>,
+  ) => void;
+  onUpdateGeneratedContent: (
+    updates: Partial<PortfolioSettings["generatedContent"]>,
+  ) => void;
   availableSummaries: SummaryItem[];
-  availableRoadmaps: RoadmapListItem[];
+  isGeneratingContent: boolean;
+  generatingTargetSection: PortfolioGeneratedSectionKey | "all" | null;
+  onGenerateContent: (targetSection?: PortfolioGeneratedSectionKey) => void;
 }
+
+const generatedSectionDefinitions = [
+  {
+    key: "selfPr" as const,
+    title: "自己PR",
+    placeholder: "あなたの強みと実績をもとにした自己PRを記載します",
+  },
+  {
+    key: "strengths" as const,
+    title: "強み",
+    placeholder: "技術的・行動的な強みを記載します",
+  },
+  {
+    key: "learnings" as const,
+    title: "学び",
+    placeholder: "学習を通じて得た知見や気づきを記載します",
+  },
+  {
+    key: "futureVision" as const,
+    title: "将来",
+    placeholder: "今後挑戦したいことやキャリア展望を記載します",
+  },
+];
 
 /**
  * 経歴ストーリーの新規入力用データを生成する
@@ -38,41 +70,46 @@ const createEmptyCareerStory =
 
 /**
  * ポートフォリオ設定の入力サイドバー
- * プロフィール情報、経歴・スキル、表示セクションの選択を行います。
+ * プロフィールとAI文章生成の設定・編集を行います。
  */
 export const ConfigSidebar = ({
   settings,
   onUpdateProfile,
   onUpdateSocialLinks,
-  onUpdateSections,
+  onUpdateGeneration,
+  onUpdateGeneratedContent,
   availableSummaries,
-  availableRoadmaps,
+  isGeneratingContent,
+  generatingTargetSection,
+  onGenerateContent,
 }: ConfigSidebarProps) => {
   const [skillInput, setSkillInput] = useState("");
 
   const careerStories = settings.profile.careerStories ?? [];
   const skills = settings.profile.skills ?? [];
+  const selectedSummaryIds = settings.generation.selectedSummaryIds ?? [];
+  const canGenerateContent =
+    selectedSummaryIds.length > 0 ||
+    settings.generation.selfPrDraft.trim().length > 0;
 
   /**
-   * サマリーの選択トグル
+   * サマリー選択を切り替える
    */
   const handleToggleSummary = (summaryId: string) => {
-    const currentIds = settings.sections.summaryIds;
-    const updatedIds = currentIds.includes(summaryId)
-      ? currentIds.filter((id) => id !== summaryId)
-      : [...currentIds, summaryId];
-    onUpdateSections({ summaryIds: updatedIds });
-  };
+    const currentIds = settings.generation.selectedSummaryIds;
 
-  /**
-   * ロードマップの選択トグル
-   */
-  const handleToggleRoadmap = (roadmapId: string) => {
-    const currentIds = settings.sections.roadmapIds;
-    const updatedIds = currentIds.includes(roadmapId)
-      ? currentIds.filter((id) => id !== roadmapId)
-      : [...currentIds, roadmapId];
-    onUpdateSections({ roadmapIds: updatedIds });
+    if (currentIds.includes(summaryId)) {
+      onUpdateGeneration({
+        selectedSummaryIds: currentIds.filter((id) => id !== summaryId),
+      });
+      return;
+    }
+
+    if (currentIds.length >= 5) {
+      return;
+    }
+
+    onUpdateGeneration({ selectedSummaryIds: [...currentIds, summaryId] });
   };
 
   /**
@@ -142,6 +179,18 @@ export const ConfigSidebar = ({
     onUpdateProfile({
       skills: skills.filter((currentSkill) => currentSkill !== skill),
     });
+  };
+
+  /**
+   * 生成文章の単一項目を更新する
+   */
+  const handleUpdateGeneratedSection = (
+    sectionKey: PortfolioGeneratedSectionKey,
+    content: string,
+  ) => {
+    onUpdateGeneratedContent({
+      [sectionKey]: content,
+    } as Pick<PortfolioSettings["generatedContent"], typeof sectionKey>);
   };
 
   return (
@@ -461,68 +510,134 @@ export const ConfigSidebar = ({
         )}
       </section>
 
-      <section className="glass rounded-xl border border-white/50 dark:border-white/15 p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-          サマリー
-        </h3>
-        {availableSummaries.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">
-            選択可能なサマリーがありません
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {availableSummaries.map((summary) => (
-              <label
-                key={summary.id}
-                htmlFor={`summary-${summary.id}`}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer"
-              >
-                <input
-                  id={`summary-${summary.id}`}
-                  type="checkbox"
-                  checked={settings.sections.summaryIds.includes(summary.id)}
-                  onChange={() => handleToggleSummary(summary.id)}
-                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500/50 cursor-pointer"
-                />
-                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
-                  {summary.title || "無題のサマリー"}
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
-      </section>
+      <section className="glass rounded-xl border border-white/50 dark:border-white/15 p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-500" />
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            AI文章生成
+          </h3>
+        </div>
 
-      <section className="glass rounded-xl border border-white/50 dark:border-white/15 p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-          ロードマップ
-        </h3>
-        {availableRoadmaps.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">
-            選択可能なロードマップがありません
+        <div className="space-y-2">
+          <p className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            生成に使うサマリー（最大5件）
           </p>
-        ) : (
-          <div className="space-y-2">
-            {availableRoadmaps.map((roadmap) => (
-              <label
-                key={roadmap.id}
-                htmlFor={`roadmap-${roadmap.id}`}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer"
-              >
-                <input
-                  id={`roadmap-${roadmap.id}`}
-                  type="checkbox"
-                  checked={settings.sections.roadmapIds.includes(roadmap.id)}
-                  onChange={() => handleToggleRoadmap(roadmap.id)}
-                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500/50 cursor-pointer"
-                />
-                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
-                  {roadmap.goalState}
-                </span>
-              </label>
-            ))}
-          </div>
+          {availableSummaries.length === 0 ? (
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              利用可能なサマリーがありません
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+              {availableSummaries.map((summary) => {
+                const isSelected = selectedSummaryIds.includes(summary.id);
+                const canSelectMore =
+                  isSelected || selectedSummaryIds.length < 5;
+
+                return (
+                  <label
+                    key={summary.id}
+                    htmlFor={`summary-${summary.id}`}
+                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 ${
+                      canSelectMore
+                        ? "hover:bg-white/40 dark:hover:bg-slate-700/40 cursor-pointer"
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <input
+                      id={`summary-${summary.id}`}
+                      type="checkbox"
+                      checked={isSelected}
+                      disabled={!canSelectMore}
+                      onChange={() => handleToggleSummary(summary.id)}
+                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500/50 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                      {summary.title || "無題のサマリー"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {selectedSummaryIds.length}/5件 選択中
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="self-pr-draft"
+            className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+          >
+            自己PR下書き（任意）
+          </label>
+          <textarea
+            id="self-pr-draft"
+            rows={4}
+            value={settings.generation.selfPrDraft}
+            onChange={(e) =>
+              onUpdateGeneration({
+                selfPrDraft: e.target.value,
+              })
+            }
+            placeholder="サマリー未選択時はここに下書きを入力してください"
+            className="w-full px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/15 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 resize-y"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onGenerateContent()}
+          disabled={isGeneratingContent || !canGenerateContent}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+        >
+          {isGeneratingContent && generatingTargetSection === "all"
+            ? "4項目を生成中..."
+            : "4項目を生成"}
+        </button>
+
+        {!canGenerateContent && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            サマリーを1件以上選択するか、自己PR下書きを入力してください。
+          </p>
         )}
+
+        <div className="space-y-4 pt-2">
+          {generatedSectionDefinitions.map((section) => (
+            <div key={section.key} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor={`generated-${section.key}`}
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  {section.title}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onGenerateContent(section.key)}
+                  disabled={isGeneratingContent || !canGenerateContent}
+                  className="rounded-lg border border-slate-300/70 dark:border-slate-600/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-700/70 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                >
+                  {isGeneratingContent &&
+                  generatingTargetSection === section.key
+                    ? "再生成中..."
+                    : "この項目を再生成"}
+                </button>
+              </div>
+
+              <textarea
+                id={`generated-${section.key}`}
+                rows={4}
+                value={settings.generatedContent[section.key]}
+                onChange={(e) =>
+                  handleUpdateGeneratedSection(section.key, e.target.value)
+                }
+                placeholder={section.placeholder}
+                className="w-full px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/15 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 resize-y"
+              />
+            </div>
+          ))}
+        </div>
       </section>
     </aside>
   );

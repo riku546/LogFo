@@ -45,11 +45,7 @@ export default function PublicPortfolioPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-slate-900">
-      <PortfolioPublicView
-        settings={portfolioData.settings}
-        summaries={portfolioData.summaries}
-        roadmaps={portfolioData.roadmaps}
-      />
+      <PortfolioPublicView settings={portfolioData.settings} />
     </main>
   );
 }

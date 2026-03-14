@@ -1,4 +1,4 @@
-# ポートフォリオ生成・共有機能 詳細設計書 (Portfolio Generation Design)
+# ポートフォリオAI文章生成・共有機能 詳細設計書 (Portfolio AI Narrative Design)
 
 ## 1. フロントエンド実装設計 (Frontend)
 
@@ -10,39 +10,47 @@
 ### 1.2. コンポーネント構成 (`frontend/src/features/portfolio/`)
 
 - `ConfigSidebar`
-  - プロフィール、SNS、経歴ストーリー、スキル、サマリー選択、ロードマップ選択を編集する。
+  - プロフィール編集
+  - AI文章生成入力（サマリー選択、自己PR下書き）
+  - 4項目一括生成/項目別再生成
+  - 生成結果編集
 - `LivePreviewPane`
-  - `PortfolioPublicView` を利用し、編集中の設定をリアルタイム表示する。
+  - `PortfolioPublicView` を利用し、編集中設定をリアルタイム表示
 - `PublishSettingsPanel`
-  - 保存ボタン、公開設定モーダル起動ボタンを提供する。
+  - 保存/公開設定導線
 - `PublishSettingsModal`
-  - Slug編集、公開/非公開トグル、公開URLコピーを提供する。
+  - Slug、公開/非公開切替、公開URLコピー
 - `PortfolioPublicView`
-  - 公開ページとプレビューで共通利用する表示コンポーネント。
-  - プロフィールタブ（経歴・スキル）とロードマップタブ（ロードマップ一覧/詳細 + サマリー）を表示する。
+  - 公開ページとプレビューで共通利用
+  - タブ1: 経歴・スキル
+  - タブ2: `PR・強み`（AI生成4セクションのみ）
 
 ### 1.3. 状態管理
 
-- `usePortfolioBuilder` で以下を `useState` 管理する。
+- `usePortfolioBuilder` で以下を管理する:
   - `settings`
   - `slug`
   - `isPublic`
   - `isLoading`
   - `isSaving`
-- 初期表示時に `GET /api/portfolio` で既存設定を取得し、ローカル状態へ正規化して反映する。
-- 保存時は `POST /api/portfolio` を呼び出し、UPSERTする。
-- 公開ページは `usePublicPortfolio` で `GET /portfolio/public/:slug` をクライアント取得する。
+- `settings` には以下を保持:
+  - `profile`
+  - `generation`（`selectedSummaryIds`, `selfPrDraft`）
+  - `generatedContent`（`selfPr`, `strengths`, `learnings`, `futureVision`）
+- `page.tsx` 側で生成用状態を管理:
+  - `isGeneratingContent`
+  - `generatingTargetSection`
+- 初期表示:
+  - `GET /api/portfolio`
+  - `GET /api/summary`（サマリー選択UI用）
 
-### 1.4. 設定データ構造 (`PortfolioSettings`)
+### 1.4. 画面フロー
 
-- `profile`
-  - `displayName`, `bio`, `avatarUrl`
-  - `socialLinks`（GitHub, X, Zenn, Qiita, AtCoder, Website）
-  - `careerStories[]`（id, title, organization, periodFrom, periodTo, isCurrent, story）
-  - `skills[]`
-- `sections`
-  - `summaryIds[]`
-  - `roadmapIds[]`
+1. サマリー選択（最大5件）・自己PR下書き入力
+2. `4項目を生成` 実行
+3. 必要に応じて `項目別再生成`
+4. テキストを手編集
+5. `保存` で確定
 
 ---
 
@@ -53,41 +61,102 @@
 - `POST /api/portfolio`（JWT必須）
   - ポートフォリオ設定を保存（UPSERT）
 - `GET /api/portfolio`（JWT必須）
-  - ログインユーザー自身の設定を取得
+  - 自分のポートフォリオ設定を取得
+- `POST /api/portfolio/generate`（JWT必須）
+  - AI文章生成（4項目一括/項目別再生成）
+- `GET /api/summary`（JWT必須）
+  - 自分のサマリー一覧を取得（生成入力UI向け）
 - `GET /portfolio/public/:slug`（認証不要）
-  - 公開中ポートフォリオをSlugで取得
+  - 公開ポートフォリオをSlugで取得
 
-### 2.2. 保存処理フロー (`POST /api/portfolio`)
+### 2.2. `POST /api/portfolio/generate` 仕様
 
-1. リクエストボディをZodで検証する（Slug形式、表示名、設定構造）。
-2. Slugの一意性を確認する（自分自身の更新は除外）。
-3. `portfolios` テーブルへユーザー単位でUPSERTする。
-4. 保存済み `portfolioId` を返却する。
+- Request:
+  - `selectedSummaryIds: string[]`（最大5件）
+  - `selfPrDraft: string`
+  - `profile`
+  - `targetSection?: "selfPr" | "strengths" | "learnings" | "futureVision"`
+  - `currentContent`（項目別再生成時の参照用）
+- Validation:
+  - `selectedSummaryIds` が空の場合、`selfPrDraft` は必須
+  - 指定サマリーがユーザー所有であること
+- Response:
+  - `generatedContent`
+    - `selfPr`
+    - `strengths`
+    - `learnings`
+    - `futureVision`
 
 ### 2.3. 公開取得フロー (`GET /portfolio/public/:slug`)
 
-1. Slugでポートフォリオを取得する。
-2. レコード未存在は404、`isPublic = false` は403を返す。
-3. `settings.sections.summaryIds` / `roadmapIds` を読み取り、関連データを取得する。
-4. 返却値は `slug`, `settings`, `summaries`, `roadmaps`。
+1. Slugでポートフォリオ取得
+2. 未存在は404、`isPublic = false` は403
+3. `slug`, `settings` を返却
 
 補足:
-- 現在はID配列をもとにリポジトリへ個別取得を行い、`Promise.all` で並列化している。
-- JOINや外部活動データ統合は将来の最適化対象とする。
+- 旧仕様の `summaries`, `roadmaps` は返却しない
+- 公開ページは `settings.generatedContent` のみを表示
 
 ### 2.4. エラーハンドリング
 
-- 400: バリデーションエラー
-- 401: 認証情報不正
-- 403: 非公開ポートフォリオへのアクセス
+- 400: バリデーションエラー（入力不足、5件超過等）
+- 401: 認証エラー
+- 403: 非公開ポートフォリオ、または他人サマリー指定
 - 404: ポートフォリオ未存在
 - 409: Slug重複
 
-## 3. 将来拡張
+---
 
-- 外部連携データウィジェット（ヒートマップ、言語グラフ、コミット集計）
-- ドラッグ＆ドロップ並び替え
-- LLMによるレイアウト提案
-- 期限付きURL、パスワード保護共有
-- CTA（面談申込/問い合わせ）導線
-- OGP画像動的生成（例: `/api/og/:slug`）と公開ページメタデータ連携
+## 3. データ構造
+
+### 3.1. `PortfolioSettings`
+
+- `profile`
+  - `displayName`, `bio`, `avatarUrl`
+  - `socialLinks`
+  - `careerStories[]`
+  - `skills[]`
+- `generation`
+  - `selectedSummaryIds[]`
+  - `selfPrDraft`
+- `generatedContent`
+  - `selfPr`
+  - `strengths`
+  - `learnings`
+  - `futureVision`
+
+### 3.2. 非互換変更
+
+- `sections.summaryIds` / `sections.roadmapIds` を削除
+- 旧公開表示データ（ロードマップ/サマリー本文）前提を廃止
+
+---
+
+## 4. テスト設計
+
+### 4.1. Backend
+
+- `POST /api/portfolio/generate`
+  - 正常系（全体生成、項目別再生成）
+  - 異常系（入力不足、6件以上、所有権違反）
+- `GET /api/summary`
+  - 自分のサマリー一覧を返す
+- `GET /portfolio/public/:slug`
+  - 新レスポンス形式（`slug`, `settings`）のみ返す
+
+### 4.2. Frontend
+
+- サイドバー
+  - サマリー選択上限5件
+  - 入力不足時の生成制御
+- 生成フロー
+  - 一括生成 -> 編集 -> 保存
+  - 項目別再生成で対象項目のみ更新
+- 公開表示
+  - `PR・強み` タブで4項目の非空表示
+
+## 5. 将来拡張
+
+- 生成文のトーン切替（フォーマル/カジュアル）
+- セクションごとの文字数ガイド強化
+- 公開先（企業・用途）別テンプレート最適化

@@ -1,22 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { PortfolioSettings } from "@/features/portfolio/api/portfolioApi";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
-import type { RoadmapListItem } from "@/features/roadmap/api/roadmapApi";
 import type { SummaryItem } from "@/features/summary/api/summaryApi";
-
-const availableRoadmaps: RoadmapListItem[] = [
-  {
-    id: "roadmap-1",
-    currentState: "現状A",
-    goalState: "ロードマップA",
-    summary: "ロードマップ要約A",
-    createdAt: "2026-03-01T00:00:00.000Z",
-    updatedAt: "2026-03-01T00:00:00.000Z",
-  },
-];
 
 const availableSummaries: SummaryItem[] = [
   {
@@ -25,6 +13,15 @@ const availableSummaries: SummaryItem[] = [
     milestoneId: "milestone-1",
     title: "サマリーA",
     content: "サマリー本文A",
+    createdAt: "2026-03-01T00:00:00.000Z",
+    updatedAt: "2026-03-01T00:00:00.000Z",
+  },
+  {
+    id: "summary-2",
+    userId: "user-1",
+    milestoneId: "milestone-1",
+    title: "サマリーB",
+    content: "サマリー本文B",
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-03-01T00:00:00.000Z",
   },
@@ -46,9 +43,15 @@ const createInitialSettings = (): PortfolioSettings => ({
     careerStories: [],
     skills: [],
   },
-  sections: {
-    roadmapIds: [],
-    summaryIds: [],
+  generation: {
+    selectedSummaryIds: [],
+    selfPrDraft: "",
+  },
+  generatedContent: {
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
   },
 });
 
@@ -56,26 +59,6 @@ const PreviewHarness = () => {
   const [settings, setSettings] = useState<PortfolioSettings>(
     createInitialSettings(),
   );
-
-  const selectedRoadmaps = useMemo(() => {
-    const roadmapById = new Map(
-      availableRoadmaps.map((roadmap) => [roadmap.id, roadmap]),
-    );
-
-    return settings.sections.roadmapIds
-      .map((roadmapId) => roadmapById.get(roadmapId))
-      .filter((roadmap): roadmap is RoadmapListItem => roadmap !== undefined);
-  }, [settings.sections.roadmapIds]);
-
-  const selectedSummaries = useMemo(() => {
-    const summaryById = new Map(
-      availableSummaries.map((summary) => [summary.id, summary]),
-    );
-
-    return settings.sections.summaryIds
-      .map((summaryId) => summaryById.get(summaryId))
-      .filter((summary): summary is SummaryItem => summary !== undefined);
-  }, [settings.sections.summaryIds]);
 
   return (
     <div>
@@ -102,39 +85,57 @@ const PreviewHarness = () => {
             },
           }));
         }}
-        onUpdateSections={(updates) => {
+        onUpdateGeneration={(updates) => {
           setSettings((prev) => ({
             ...prev,
-            sections: {
-              ...prev.sections,
+            generation: {
+              ...prev.generation,
+              ...updates,
+            },
+          }));
+        }}
+        onUpdateGeneratedContent={(updates) => {
+          setSettings((prev) => ({
+            ...prev,
+            generatedContent: {
+              ...prev.generatedContent,
               ...updates,
             },
           }));
         }}
         availableSummaries={availableSummaries}
-        availableRoadmaps={availableRoadmaps}
+        isGeneratingContent={false}
+        generatingTargetSection={null}
+        onGenerateContent={() => {
+          // no-op
+        }}
       />
 
-      <LivePreviewPane
-        settings={settings}
-        summaries={selectedSummaries}
-        roadmaps={selectedRoadmaps}
-      />
+      <LivePreviewPane settings={settings} />
     </div>
   );
 };
 
 describe("Portfolio realtime preview", () => {
-  it("サマリー/ロードマップ選択が保存前にプレビューへ即時反映される", () => {
+  it("AI生成セクション編集が保存前にプレビューへ即時反映される", () => {
     render(<PreviewHarness />);
 
     fireEvent.click(screen.getByLabelText("サマリーA"));
-    fireEvent.click(screen.getByLabelText("ロードマップA"));
-    fireEvent.click(screen.getByRole("button", { name: "ロードマップ" }));
+    fireEvent.change(screen.getByLabelText("自己PR下書き（任意）"), {
+      target: { value: "下書きです" },
+    });
+    fireEvent.change(screen.getByLabelText("自己PR"), {
+      target: { value: "私は継続的な改善を得意とするエンジニアです。" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "PR・強み" }));
 
     const previewMain = screen.getByRole("main");
-    expect(within(previewMain).getByText("ロードマップA")).toBeInTheDocument();
-    expect(within(previewMain).getByText("サマリー本文A")).toBeInTheDocument();
+    expect(
+      within(previewMain).getByText(
+        "私は継続的な改善を得意とするエンジニアです。",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("経歴ストーリーとスキル入力が保存前にプレビューへ即時反映される", () => {

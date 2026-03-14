@@ -1,21 +1,16 @@
 "use client";
 
-import { ArrowLeft, Map as MapIcon, User } from "lucide-react";
+import { Sparkles, User } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
-import type {
-  PortfolioSettings,
-  PublicPortfolioData,
-} from "../api/portfolioApi";
+import { useMemo, useState } from "react";
+import type { PortfolioSettings } from "../api/portfolioApi";
 import { QiitaIcon, ZennIcon } from "./icons";
 
 export interface PortfolioPublicViewProps {
   settings: PortfolioSettings;
-  summaries?: PublicPortfolioData["summaries"];
-  roadmaps?: PublicPortfolioData["roadmaps"];
 }
 
-type TabType = "profile" | "roadmaps";
+type TabType = "profile" | "prStrength";
 
 const formatPeriodLabel = (
   careerStory: PortfolioSettings["profile"]["careerStories"][number],
@@ -273,176 +268,72 @@ const ProfileTab = ({ profile }: { profile: PortfolioSettings["profile"] }) => (
   </div>
 );
 
-const RoadmapDetail = ({
-  roadmap,
-  onBack,
+const NarrativeTab = ({
+  generatedContent,
 }: {
-  roadmap: PublicPortfolioData["roadmaps"][0];
-  onBack: () => void;
-}) => (
-  <section className="glass rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-7 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <button
-      type="button"
-      onClick={onBack}
-      className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50/70 dark:text-slate-400 dark:hover:text-blue-300 dark:hover:bg-slate-700/60 transition-all duration-300 cursor-pointer"
-    >
-      <ArrowLeft className="w-4 h-4" />
-      一覧に戻る
-    </button>
-
-    <div className="space-y-5">
-      <div className="space-y-1.5">
-        <p className="text-xs font-semibold tracking-wide uppercase text-blue-600 dark:text-blue-300">
-          Goal
-        </p>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 leading-snug">
-          {roadmap.goalState}
-        </h3>
-      </div>
-
-      <div className="space-y-1.5">
-        <p className="text-xs font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">
-          Now
-        </p>
-        <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-          {roadmap.currentState}
-        </p>
-      </div>
-
-      <div className="space-y-1.5">
-        <p className="text-xs font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">
-          Summary
-        </p>
-        {roadmap.summary ? (
-          <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-            {roadmap.summary}
-          </p>
-        ) : (
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            サマリーがまだ生成されていません
-          </p>
-        )}
-      </div>
-    </div>
-  </section>
-);
-
-const RoadmapList = ({
-  roadmaps,
-  onSelectRoadmap,
-}: {
-  roadmaps: PublicPortfolioData["roadmaps"];
-  onSelectRoadmap: (id: string) => void;
-}) => (
-  <section className="glass rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-7 space-y-5">
-    <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-(--font-poppins)">
-      ロードマップ
-    </h2>
-
-    {roadmaps.length === 0 ? (
-      <p className="text-slate-500 dark:text-slate-400 py-6 border border-dashed border-slate-300/80 dark:border-slate-600 rounded-xl text-center">
-        選択されたロードマップはありません
-      </p>
-    ) : (
-      <ul className="space-y-3">
-        {roadmaps.map((roadmap) => (
-          <li key={roadmap.id}>
-            <button
-              type="button"
-              onClick={() => onSelectRoadmap(roadmap.id)}
-              className="w-full text-left rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/65 dark:bg-slate-800/65 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-400/40 transition-all duration-300 cursor-pointer"
-            >
-              <p className="text-xs font-semibold tracking-wide uppercase text-blue-600 dark:text-blue-300 mb-2">
-                Goal
-              </p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
-                {roadmap.goalState}
-              </p>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1.5 line-clamp-2">
-                {roadmap.currentState}
-              </p>
-            </button>
-          </li>
-        ))}
-      </ul>
-    )}
-  </section>
-);
-
-const SummarySection = ({
-  summaries,
-}: {
-  summaries: PublicPortfolioData["summaries"];
-}) => (
-  <section className="glass rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-7 space-y-5">
-    <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-(--font-poppins)">
-      サマリー
-    </h2>
-
-    {summaries.length === 0 ? (
-      <p className="text-slate-500 dark:text-slate-400 py-6 border border-dashed border-slate-300/80 dark:border-slate-600 rounded-xl text-center">
-        選択されたサマリーはありません
-      </p>
-    ) : (
-      <ul className="space-y-3">
-        {summaries.map((summary) => (
-          <li
-            key={summary.id}
-            className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/65 dark:bg-slate-800/65 p-4"
-          >
-            {summary.title && (
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {summary.title}
-              </h3>
-            )}
-            <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {summary.content}
-            </p>
-          </li>
-        ))}
-      </ul>
-    )}
-  </section>
-);
-
-const RoadmapsTab = ({
-  roadmaps,
-  summaries,
-  selectedRoadmap,
-  onSelectRoadmap,
-  onBack,
-}: {
-  roadmaps: PublicPortfolioData["roadmaps"];
-  summaries: PublicPortfolioData["summaries"];
-  selectedRoadmap: PublicPortfolioData["roadmaps"][0] | null;
-  onSelectRoadmap: (id: string) => void;
-  onBack: () => void;
-}) => (
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    {selectedRoadmap ? (
-      <RoadmapDetail roadmap={selectedRoadmap} onBack={onBack} />
-    ) : (
-      <RoadmapList roadmaps={roadmaps} onSelectRoadmap={onSelectRoadmap} />
-    )}
-
-    <SummarySection summaries={summaries} />
-  </div>
-);
-
-export const PortfolioPublicView = ({
-  settings,
-  summaries = [],
-  roadmaps = [],
-}: PortfolioPublicViewProps) => {
-  const { profile } = settings;
-  const [activeTab, setActiveTab] = useState<TabType>("profile");
-  const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(
-    null,
+  generatedContent: PortfolioSettings["generatedContent"];
+}) => {
+  const visibleSections = useMemo(
+    () =>
+      [
+        {
+          key: "selfPr" as const,
+          title: "自己PR",
+          content: generatedContent.selfPr,
+        },
+        {
+          key: "strengths" as const,
+          title: "強み",
+          content: generatedContent.strengths,
+        },
+        {
+          key: "learnings" as const,
+          title: "学び",
+          content: generatedContent.learnings,
+        },
+        {
+          key: "futureVision" as const,
+          title: "将来",
+          content: generatedContent.futureVision,
+        },
+      ].filter((section) => section.content.trim().length > 0),
+    [generatedContent],
   );
 
-  const selectedRoadmap = selectedRoadmapId
-    ? roadmaps.find((roadmap) => roadmap.id === selectedRoadmapId) || null
-    : null;
+  return (
+    <section className="glass rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-7 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-(--font-poppins)">
+        PR・強み
+      </h2>
+
+      {visibleSections.length === 0 ? (
+        <p className="text-slate-500 dark:text-slate-400 py-6 border border-dashed border-slate-300/80 dark:border-slate-600 rounded-xl text-center">
+          まだ自己PRや強みの文章がありません
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {visibleSections.map((section) => (
+            <li
+              key={section.key}
+              className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/65 dark:bg-slate-800/65 p-4 md:p-5"
+            >
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                {section.title}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                {section.content}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+};
+
+export const PortfolioPublicView = ({ settings }: PortfolioPublicViewProps) => {
+  const { profile, generatedContent } = settings;
+  const [activeTab, setActiveTab] = useState<TabType>("profile");
 
   return (
     <div className="relative overflow-hidden">
@@ -456,10 +347,7 @@ export const PortfolioPublicView = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => {
-                setActiveTab("profile");
-                setSelectedRoadmapId(null);
-              }}
+              onClick={() => setActiveTab("profile")}
               className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
                 activeTab === "profile"
                   ? "bg-blue-600 text-white shadow-lg"
@@ -472,15 +360,15 @@ export const PortfolioPublicView = ({
 
             <button
               type="button"
-              onClick={() => setActiveTab("roadmaps")}
+              onClick={() => setActiveTab("prStrength")}
               className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
-                activeTab === "roadmaps"
+                activeTab === "prStrength"
                   ? "bg-blue-600 text-white shadow-lg"
                   : "text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
               }`}
             >
-              <MapIcon className="w-4 h-4" />
-              ロードマップ
+              <Sparkles className="w-4 h-4" />
+              PR・強み
             </button>
           </div>
         </div>
@@ -489,13 +377,7 @@ export const PortfolioPublicView = ({
           {activeTab === "profile" ? (
             <ProfileTab profile={profile} />
           ) : (
-            <RoadmapsTab
-              roadmaps={roadmaps}
-              summaries={summaries}
-              selectedRoadmap={selectedRoadmap}
-              onSelectRoadmap={setSelectedRoadmapId}
-              onBack={() => setSelectedRoadmapId(null)}
-            />
+            <NarrativeTab generatedContent={generatedContent} />
           )}
         </main>
 

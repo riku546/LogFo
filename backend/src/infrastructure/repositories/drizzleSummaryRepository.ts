@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type {
   CreateSummaryInput,
@@ -51,6 +51,22 @@ export class DrizzleSummaryRepository implements SummaryRepository {
   }
 
   /**
+   * ユーザーIDに紐づくサマリーを作成日時降順で取得します。
+   *
+   * @param userId - ユーザーID
+   * @returns サマリーの配列
+   */
+  async findByUserId(userId: string): Promise<Summary[]> {
+    const rows = await this.db
+      .select()
+      .from(summaries)
+      .where(eq(summaries.userId, userId))
+      .orderBy(desc(summaries.createdAt));
+
+    return rows;
+  }
+
+  /**
    * IDでサマリーを1件取得します。
    *
    * @param summaryId - サマリーのID
@@ -66,6 +82,29 @@ export class DrizzleSummaryRepository implements SummaryRepository {
     if (!row) return undefined;
 
     return row;
+  }
+
+  /**
+   * 指定ユーザーが所有するサマリーをID配列で取得します。
+   *
+   * @param userId - ユーザーID
+   * @param summaryIds - サマリーID配列
+   * @returns 取得できたサマリー配列
+   */
+  async findByIdsForUser(
+    userId: string,
+    summaryIds: string[],
+  ): Promise<Summary[]> {
+    if (summaryIds.length === 0) return [];
+
+    const rows = await this.db
+      .select()
+      .from(summaries)
+      .where(
+        and(eq(summaries.userId, userId), inArray(summaries.id, summaryIds)),
+      );
+
+    return rows;
   }
 
   /**

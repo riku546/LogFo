@@ -3,6 +3,10 @@ import { zValidator } from "@hono/zod-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import {
+  GeneratePortfolioNarrativeUsecase,
+  SummarySelectionForbiddenError,
+} from "../../core/application/usecases/portfolio/generatePortfolioNarrativeUsecase";
 import { GetPortfolioUsecase } from "../../core/application/usecases/portfolio/getPortfolioUsecase";
 import {
   GetPublicPortfolioUsecase,
@@ -13,12 +17,16 @@ import {
   SavePortfolioUsecase,
   SlugAlreadyTakenError,
 } from "../../core/application/usecases/portfolio/savePortfolioUsecase";
+import { getSummaryLLM } from "../../infrastructure/ai/llmProvider";
+import { AIPortfolioNarrativeGenerator } from "../../infrastructure/ai/portfolioNarrativeGenerator";
 import { DrizzlePortfolioRepository } from "../../infrastructure/repositories/drizzlePortfolioRepository";
-import { DrizzleRoadmapRepository } from "../../infrastructure/repositories/drizzleRoadmapRepository";
 import { DrizzleSummaryRepository } from "../../infrastructure/repositories/drizzleSummaryRepository";
 import { buildErrorResponse } from "../../lib/buildErrorResponse";
 import { getUserIdFromJwt } from "../../lib/readJson";
-import { savePortfolioRequestSchema } from "../../schema/portfolio";
+import {
+  generatePortfolioContentRequestSchema,
+  savePortfolioRequestSchema,
+} from "../../schema/portfolio";
 
 /**
  * ドメインエラーをHTTPExceptionに変換するヘルパー関数
@@ -31,6 +39,9 @@ const handleDomainError = (error: unknown): never => {
     throw new HTTPException(404, { message: error.message });
   }
   if (error instanceof PortfolioNotPublicError) {
+    throw new HTTPException(403, { message: error.message });
+  }
+  if (error instanceof SummarySelectionForbiddenError) {
     throw new HTTPException(403, { message: error.message });
   }
   throw error;
@@ -53,6 +64,52 @@ export const createPortfolioRoutes = () => {
     new Hono<{ Bindings: Env }>()
 
       // ===== ポートフォリオ設定の保存（UPSERT） =====
+      .post(
+        "/portfolio/generate",
+        zValidator(
+          "json",
+          generatePortfolioContentRequestSchema,
+          (result, c) => {
+            if (!result.success) {
+              return buildErrorResponse(
+                c,
+                400,
+                "Validation Error",
+                result.error.issues.map((issue) => issue.message),
+              );
+            }
+          },
+        ),
+        async (c) => {
+          const userId = getUserIdFromJwt(c);
+          const input = c.req.valid("json");
+
+          const db = drizzle(c.env.DB);
+          const summaryRepository = new DrizzleSummaryRepository(db);
+          const { model } = getSummaryLLM(c.env);
+          const narrativeGenerator = new AIPortfolioNarrativeGenerator(model);
+          const usecase = new GeneratePortfolioNarrativeUsecase(
+            summaryRepository,
+            narrativeGenerator,
+          );
+
+          try {
+            const generatedContent = await usecase.execute({
+              userId,
+              selectedSummaryIds: input.selectedSummaryIds,
+              selfPrDraft: input.selfPrDraft,
+              profile: input.profile,
+              currentContent: input.currentContent,
+              targetSection: input.targetSection,
+            });
+
+            return c.json({ generatedContent });
+          } catch (error) {
+            handleDomainError(error);
+          }
+        },
+      )
+
       .post(
         "/portfolio",
         zValidator("json", savePortfolioRequestSchema, (result, c) => {
@@ -123,14 +180,7 @@ export const createPublicPortfolioRoutes = () => {
 
         const db = drizzle(c.env.DB);
         const portfolioRepository = new DrizzlePortfolioRepository(db);
-        const summaryRepository = new DrizzleSummaryRepository(db);
-        const roadmapRepository = new DrizzleRoadmapRepository(db);
-
-        const usecase = new GetPublicPortfolioUsecase(
-          portfolioRepository,
-          summaryRepository,
-          roadmapRepository,
-        );
+        const usecase = new GetPublicPortfolioUsecase(portfolioRepository);
 
         try {
           const portfolioData = await usecase.execute(slug);
