@@ -40,7 +40,7 @@ const ProfileHeader = ({
   profile: PortfolioSettings["profile"];
 }) => (
   <section className="glass relative overflow-hidden rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-8">
-    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-400" />
+    <div className="absolute inset-x-0 top-0 h-1 bg-blue-500" />
     <div className="absolute -top-24 -right-20 h-48 w-48 rounded-full bg-blue-500/15 blur-3xl" />
 
     <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
@@ -205,7 +205,7 @@ const CareerSection = ({
       </p>
     ) : (
       <ol className="relative space-y-4 pl-7">
-        <span className="absolute left-2 top-1 bottom-1 w-px bg-gradient-to-b from-blue-500/80 via-blue-300/70 to-transparent" />
+        <span className="absolute left-2 top-1 bottom-1 w-px bg-blue-400/70" />
         {careerStories.map((careerStory) => (
           <li key={careerStory.id} className="relative">
             <span className="absolute -left-[1.42rem] top-5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100 dark:ring-slate-800" />
@@ -336,58 +336,53 @@ export const PortfolioPublicView = ({ settings }: PortfolioPublicViewProps) => {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
   return (
-    <div className="relative overflow-hidden">
-      <div className="absolute -top-20 right-0 h-72 w-72 rounded-full bg-blue-400/15 blur-3xl" />
-      <div className="absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+    <div className="flex flex-col max-w-5xl mx-auto gap-5 p-6 md:p-10 lg:p-12">
+      <ProfileHeader profile={profile} />
 
-      <div className="relative max-w-5xl mx-auto space-y-6 py-8 px-4 lg:px-6">
-        <ProfileHeader profile={profile} />
+      <div className="glass rounded-2xl border border-white/50 dark:border-white/15 p-2">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
+              activeTab === "profile"
+                ? "bg-blue-600 text-white shadow-lg"
+                : "text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
+            }`}
+          >
+            <User className="w-4 h-4" />
+            経歴・スキル
+          </button>
 
-        <div className="glass rounded-2xl border border-white/50 dark:border-white/15 p-2">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("profile")}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
-                activeTab === "profile"
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
-              }`}
-            >
-              <User className="w-4 h-4" />
-              経歴・スキル
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("prStrength")}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
-                activeTab === "prStrength"
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              PR・強み
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("prStrength")}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-sm font-medium transition-all duration-300 cursor-pointer ${
+              activeTab === "prStrength"
+                ? "bg-blue-600 text-white shadow-lg"
+                : "text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            PR・強み
+          </button>
         </div>
-
-        <main className="min-h-[320px]">
-          {activeTab === "profile" ? (
-            <ProfileTab profile={profile} />
-          ) : (
-            <NarrativeTab generatedContent={generatedContent} />
-          )}
-        </main>
-
-        <footer className="glass rounded-2xl border border-white/50 dark:border-white/15 text-center text-xs text-slate-500 dark:text-slate-400 py-3.5">
-          Powered by{" "}
-          <span className="font-semibold text-slate-700 dark:text-slate-200">
-            LogFo
-          </span>
-        </footer>
       </div>
+
+      <main className="min-h-[320px]">
+        {activeTab === "profile" ? (
+          <ProfileTab profile={profile} />
+        ) : (
+          <NarrativeTab generatedContent={generatedContent} />
+        )}
+      </main>
+
+      <footer className="glass rounded-2xl border border-white/50 dark:border-white/15 text-center text-xs text-slate-500 dark:text-slate-400 py-3.5">
+        Powered by{" "}
+        <span className="font-semibold text-slate-700 dark:text-slate-200">
+          LogFo
+        </span>
+      </footer>
     </div>
   );
 };

@@ -44,7 +44,7 @@ export default function PublicPortfolioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-900">
+    <main className="min-h-screen">
       <PortfolioPublicView settings={portfolioData.settings} />
     </main>
   );
