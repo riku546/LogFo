@@ -14,6 +14,7 @@ import {
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
 import { PublishSettingsModal } from "@/features/portfolio/components/PublishSettingsModal";
 import { PublishSettingsPanel } from "@/features/portfolio/components/PublishSettingsPanel";
+import { SummarySelectionModal } from "@/features/portfolio/components/SummarySelectionModal";
 import { usePortfolioBuilder } from "@/features/portfolio/hooks/usePortfolioBuilder";
 import type { SummaryItem } from "@/features/summary/api/summaryApi";
 import { fetchMySummaries } from "@/features/summary/api/summaryApi";
@@ -43,6 +44,11 @@ export default function PortfolioBuilderPage() {
     [],
   );
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isSummarySelectionModalOpen, setIsSummarySelectionModalOpen] =
+    useState(false);
+  const [draftSelectedSummaryIds, setDraftSelectedSummaryIds] = useState<
+    string[]
+  >([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<PortfolioChatMessage[]>([]);
@@ -189,6 +195,34 @@ export default function PortfolioBuilderPage() {
     [],
   );
 
+  const handleOpenSummarySelectionModal = useCallback(() => {
+    setDraftSelectedSummaryIds(settings.generation.selectedSummaryIds ?? []);
+    setIsSummarySelectionModalOpen(true);
+  }, [settings.generation.selectedSummaryIds]);
+
+  const handleToggleDraftSummary = useCallback((summaryId: string) => {
+    setDraftSelectedSummaryIds((previousIds) => {
+      if (previousIds.includes(summaryId)) {
+        return previousIds.filter((id) => id !== summaryId);
+      }
+
+      if (previousIds.length >= 5) {
+        return previousIds;
+      }
+
+      return [...previousIds, summaryId];
+    });
+  }, []);
+
+  const handleApplySummarySelection = useCallback(() => {
+    updateGeneration({ selectedSummaryIds: draftSelectedSummaryIds });
+    setIsSummarySelectionModalOpen(false);
+  }, [draftSelectedSummaryIds, updateGeneration]);
+
+  const handleCloseSummarySelectionModal = useCallback(() => {
+    setIsSummarySelectionModalOpen(false);
+  }, []);
+
   /**
    * AI文章生成を実行する
    */
@@ -324,31 +358,33 @@ export default function PortfolioBuilderPage() {
       <div className="absolute top-12 left-8 h-56 w-56 rounded-full bg-blue-400/10 blur-3xl" />
       <div className="absolute -bottom-10 right-10 h-64 w-64 rounded-full bg-blue-300/10 blur-3xl" />
 
-      <div className="relative flex flex-col lg:flex-row flex-1 min-h-0">
+      <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
         <ConfigSidebar
           settings={settings}
           onUpdateGeneration={updateGeneration}
-          availableSummaries={availableSummaries}
           isStreaming={isStreaming}
           messages={messages}
           onSendMessage={handleSendMessage}
           onApplyMessage={handleApplyMessage}
+          onOpenSummarySelection={handleOpenSummarySelectionModal}
         />
-        <LivePreviewPane
-          settings={settings}
-          isEditing={isEditing}
-          onToggleEditing={() => setIsEditing((prev) => !prev)}
-          onUpdateProfile={updateProfile}
-          onUpdateSocialLinks={updateSocialLinks}
-          onUpdateGeneratedContent={updateGeneratedContent}
-        />
-      </div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <LivePreviewPane
+            settings={settings}
+            isEditing={isEditing}
+            onToggleEditing={() => setIsEditing((prev) => !prev)}
+            onUpdateProfile={updateProfile}
+            onUpdateSocialLinks={updateSocialLinks}
+            onUpdateGeneratedContent={updateGeneratedContent}
+          />
 
-      <PublishSettingsPanel
-        isSaving={isSaving}
-        onSave={handleSave}
-        onOpenPublishSettings={() => setIsPublishModalOpen(true)}
-      />
+          <PublishSettingsPanel
+            isSaving={isSaving}
+            onSave={handleSave}
+            onOpenPublishSettings={() => setIsPublishModalOpen(true)}
+          />
+        </div>
+      </div>
 
       <PublishSettingsModal
         isOpen={isPublishModalOpen}
@@ -357,6 +393,15 @@ export default function PortfolioBuilderPage() {
         isPublic={isPublic}
         onSlugChange={setSlug}
         onIsPublicChange={setIsPublic}
+      />
+
+      <SummarySelectionModal
+        isOpen={isSummarySelectionModalOpen}
+        summaries={availableSummaries}
+        selectedSummaryIds={draftSelectedSummaryIds}
+        onToggleSummary={handleToggleDraftSummary}
+        onApply={handleApplySummarySelection}
+        onClose={handleCloseSummarySelectionModal}
       />
     </div>
   );

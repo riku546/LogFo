@@ -2,7 +2,7 @@
 
 import { Plus, Sparkles, Trash2, User, X } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { PortfolioSettings } from "../api/portfolioApi";
 import { QiitaIcon, ZennIcon } from "./icons";
 
@@ -642,28 +642,17 @@ const NarrativeTab = ({
     updates: Partial<PortfolioSettings["generatedContent"]>,
   ) => void;
 }) => {
-  const visibleSections = useMemo(
-    () =>
-      generatedSectionDefinitions.filter(
-        (section) =>
-          isEditable || generatedContent[section.key].trim().length > 0,
-      ),
-    [generatedContent, isEditable],
-  );
-
   return (
     <section className="glass rounded-2xl border border-white/50 dark:border-white/15 p-6 md:p-7 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-(--font-poppins)">
         PR・強み
       </h2>
 
-      {visibleSections.length === 0 ? (
-        <p className="text-slate-500 dark:text-slate-400 py-6 border border-dashed border-slate-300/80 dark:border-slate-600 rounded-xl text-center">
-          まだ自己PRや強みの文章がありません
-        </p>
-      ) : (
-        <ul className="space-y-4">
-          {visibleSections.map((section) => (
+      <ul className="space-y-4">
+        {generatedSectionDefinitions.map((section) => {
+          const sectionText = generatedContent[section.key].trim();
+
+          return (
             <li
               key={section.key}
               className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/65 dark:bg-slate-800/65 p-4 md:p-5"
@@ -685,13 +674,13 @@ const NarrativeTab = ({
                 />
               ) : (
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                  {generatedContent[section.key]}
+                  {sectionText || "まだ入力されていません"}
                 </p>
               )}
             </li>
-          ))}
-        </ul>
-      )}
+          );
+        })}
+      </ul>
     </section>
   );
 };

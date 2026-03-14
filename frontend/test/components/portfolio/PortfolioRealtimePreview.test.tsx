@@ -4,19 +4,6 @@ import { describe, expect, it } from "vitest";
 import type { PortfolioSettings } from "@/features/portfolio/api/portfolioApi";
 import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
-import type { SummaryItem } from "@/features/summary/api/summaryApi";
-
-const availableSummaries: SummaryItem[] = [
-  {
-    id: "summary-1",
-    userId: "user-1",
-    milestoneId: "milestone-1",
-    title: "サマリーA",
-    content: "サマリー本文A",
-    createdAt: "2026-03-01T00:00:00.000Z",
-    updatedAt: "2026-03-01T00:00:00.000Z",
-  },
-];
 
 const createInitialSettings = (): PortfolioSettings => ({
   profile: {
@@ -75,9 +62,9 @@ const PreviewHarness = () => {
             },
           }));
         }}
-        availableSummaries={availableSummaries}
         isStreaming={false}
         messages={messages}
+        onOpenSummarySelection={() => {}}
         onSendMessage={() => {
           setMessages((prev) => [
             ...prev,
@@ -143,6 +130,18 @@ const PreviewHarness = () => {
 };
 
 describe("Portfolio realtime preview", () => {
+  it("閲覧モードでもPR・強みの4項目を常に表示する", () => {
+    render(<PreviewHarness />);
+
+    fireEvent.click(screen.getByRole("button", { name: "PR・強み" }));
+
+    expect(screen.getByRole("heading", { name: "自己PR" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "強み" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "学び" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "将来" })).toBeInTheDocument();
+    expect(screen.getAllByText("まだ入力されていません")).toHaveLength(4);
+  });
+
   it("生成候補を適用するとプレビューへ即時反映される", () => {
     render(<PreviewHarness />);
 
