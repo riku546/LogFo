@@ -16,15 +16,6 @@ const availableSummaries: SummaryItem[] = [
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-03-01T00:00:00.000Z",
   },
-  {
-    id: "summary-2",
-    userId: "user-1",
-    milestoneId: "milestone-1",
-    title: "サマリーB",
-    content: "サマリー本文B",
-    createdAt: "2026-03-01T00:00:00.000Z",
-    updatedAt: "2026-03-01T00:00:00.000Z",
-  },
 ];
 
 const createInitialSettings = (): PortfolioSettings => ({
@@ -45,7 +36,8 @@ const createInitialSettings = (): PortfolioSettings => ({
   },
   generation: {
     selectedSummaryIds: [],
-    selfPrDraft: "",
+    chatInput: "",
+    targetSection: "selfPr",
   },
   generatedContent: {
     selfPr: "",
@@ -59,11 +51,62 @@ const PreviewHarness = () => {
   const [settings, setSettings] = useState<PortfolioSettings>(
     createInitialSettings(),
   );
+  const [isEditing, setIsEditing] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: "assistant-1",
+      role: "assistant" as const,
+      content: "私は継続的な改善を得意とするエンジニアです。",
+      targetSection: "selfPr" as const,
+      status: "done" as const,
+    },
+  ]);
 
   return (
     <div>
       <ConfigSidebar
         settings={settings}
+        onUpdateGeneration={(updates) => {
+          setSettings((prev) => ({
+            ...prev,
+            generation: {
+              ...prev.generation,
+              ...updates,
+            },
+          }));
+        }}
+        availableSummaries={availableSummaries}
+        isStreaming={false}
+        messages={messages}
+        onSendMessage={() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${prev.length + 1}`,
+              role: "assistant",
+              content: "私は継続的な改善を得意とするエンジニアです。",
+              targetSection: "selfPr",
+              status: "done",
+            },
+          ]);
+        }}
+        onApplyMessage={(messageId) => {
+          const message = messages.find((item) => item.id === messageId);
+          if (!message) return;
+          setSettings((prev) => ({
+            ...prev,
+            generatedContent: {
+              ...prev.generatedContent,
+              selfPr: message.content,
+            },
+          }));
+        }}
+      />
+
+      <LivePreviewPane
+        settings={settings}
+        isEditing={isEditing}
+        onToggleEditing={() => setIsEditing((prev) => !prev)}
         onUpdateProfile={(updates) => {
           setSettings((prev) => ({
             ...prev,
@@ -85,15 +128,6 @@ const PreviewHarness = () => {
             },
           }));
         }}
-        onUpdateGeneration={(updates) => {
-          setSettings((prev) => ({
-            ...prev,
-            generation: {
-              ...prev.generation,
-              ...updates,
-            },
-          }));
-        }}
         onUpdateGeneratedContent={(updates) => {
           setSettings((prev) => ({
             ...prev,
@@ -103,30 +137,22 @@ const PreviewHarness = () => {
             },
           }));
         }}
-        availableSummaries={availableSummaries}
-        isGeneratingContent={false}
-        generatingTargetSection={null}
-        onGenerateContent={() => {
-          // no-op
-        }}
       />
-
-      <LivePreviewPane settings={settings} />
     </div>
   );
 };
 
 describe("Portfolio realtime preview", () => {
-  it("AI生成セクション編集が保存前にプレビューへ即時反映される", () => {
+  it("生成候補を適用するとプレビューへ即時反映される", () => {
     render(<PreviewHarness />);
 
-    fireEvent.click(screen.getByLabelText("サマリーA"));
-    fireEvent.change(screen.getByLabelText("自己PR下書き（任意）"), {
-      target: { value: "下書きです" },
+    fireEvent.change(screen.getByLabelText("自由入力テキスト（必須）"), {
+      target: { value: "採用担当向けにPRを生成してください" },
     });
-    fireEvent.change(screen.getByLabelText("自己PR"), {
-      target: { value: "私は継続的な改善を得意とするエンジニアです。" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "送信して生成" }));
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "この文章を適用" })[0],
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "PR・強み" }));
 
@@ -138,32 +164,21 @@ describe("Portfolio realtime preview", () => {
     ).toBeInTheDocument();
   });
 
-  it("経歴ストーリーとスキル入力が保存前にプレビューへ即時反映される", () => {
+  it("編集モードで中央エリアを編集すると即時反映される", () => {
     render(<PreviewHarness />);
 
-    fireEvent.click(screen.getByRole("button", { name: "経歴を追加" }));
-    fireEvent.change(screen.getByLabelText("役割・職種"), {
-      target: { value: "フロントエンドエンジニア" },
-    });
-    fireEvent.change(screen.getByLabelText("所属・組織"), {
-      target: { value: "LogFo" },
-    });
-    fireEvent.change(screen.getByLabelText("ストーリー"), {
-      target: { value: "UI改善を主導しました" },
+    fireEvent.click(screen.getByRole("button", { name: "編集モードへ" }));
+
+    const profileInput = screen.getByPlaceholderText("表示名");
+    fireEvent.change(profileInput, {
+      target: { value: "中央編集ユーザー" },
     });
 
-    fireEvent.change(screen.getByLabelText("スキル入力"), {
-      target: { value: "React" },
+    const profileTabButton = screen.getByRole("button", {
+      name: "経歴・スキル",
     });
-    fireEvent.click(screen.getByRole("button", { name: "スキルを追加" }));
+    fireEvent.click(profileTabButton);
 
-    const previewMain = screen.getByRole("main");
-    expect(
-      within(previewMain).getByText("フロントエンドエンジニア"),
-    ).toBeInTheDocument();
-    expect(
-      within(previewMain).getByText("UI改善を主導しました"),
-    ).toBeInTheDocument();
-    expect(within(previewMain).getByText("React")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("中央編集ユーザー")).toBeInTheDocument();
   });
 });

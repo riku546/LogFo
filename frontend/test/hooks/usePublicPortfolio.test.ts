@@ -39,7 +39,8 @@ describe("usePublicPortfolio", () => {
         },
         generation: {
           selectedSummaryIds: [],
-          selfPrDraft: "",
+          chatInput: "",
+          targetSection: "selfPr",
         },
         generatedContent: {
           selfPr: "",

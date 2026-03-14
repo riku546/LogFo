@@ -12,10 +12,10 @@ import type { SummaryRepository } from "../../interfaces/summaryRepository";
 export interface GeneratePortfolioNarrativeInput {
   readonly userId: string;
   readonly selectedSummaryIds: string[];
-  readonly selfPrDraft: string;
+  readonly chatInput: string;
+  readonly targetSection: PortfolioGeneratedSectionKey;
   readonly profile: ProfileSettings;
   readonly currentContent: PortfolioGeneratedContent;
-  readonly targetSection?: PortfolioGeneratedSectionKey;
 }
 
 /**
@@ -28,13 +28,13 @@ export interface PortfolioNarrativeGenerator {
    * @param input - 生成コンテキスト
    * @returns 4セクションの生成結果
    */
-  generate(input: {
+  generateStream(input: {
     profile: ProfileSettings;
-    selfPrDraft: string;
+    chatInput: string;
+    targetSection: PortfolioGeneratedSectionKey;
     selectedSummaries: Summary[];
     currentContent: PortfolioGeneratedContent;
-    targetSection?: PortfolioGeneratedSectionKey;
-  }): Promise<PortfolioGeneratedContent>;
+  }): AsyncIterable<string>;
 }
 
 /**
@@ -67,7 +67,7 @@ export class GeneratePortfolioNarrativeUsecase {
    */
   async execute(
     input: GeneratePortfolioNarrativeInput,
-  ): Promise<PortfolioGeneratedContent> {
+  ): Promise<AsyncIterable<string>> {
     const selectedSummaries = await this.summaryRepository.findByIdsForUser(
       input.userId,
       input.selectedSummaryIds,
@@ -84,23 +84,12 @@ export class GeneratePortfolioNarrativeUsecase {
       .map((summaryId) => summaryById.get(summaryId))
       .filter((summary): summary is Summary => summary !== undefined);
 
-    const generatedContent = await this.narrativeGenerator.generate({
+    return this.narrativeGenerator.generateStream({
       profile: input.profile,
-      selfPrDraft: input.selfPrDraft,
+      chatInput: input.chatInput,
+      targetSection: input.targetSection,
       selectedSummaries: orderedSummaries,
       currentContent: input.currentContent,
-      targetSection: input.targetSection,
     });
-
-    if (!input.targetSection) {
-      return generatedContent;
-    }
-
-    return {
-      ...input.currentContent,
-      [input.targetSection]:
-        generatedContent[input.targetSection] ||
-        input.currentContent[input.targetSection],
-    };
   }
 }

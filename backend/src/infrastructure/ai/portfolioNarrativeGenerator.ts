@@ -1,4 +1,4 @@
-import { generateObject, type LanguageModel } from "ai";
+import { type LanguageModel, streamText } from "ai";
 import type { PortfolioNarrativeGenerator } from "../../core/application/usecases/portfolio/generatePortfolioNarrativeUsecase";
 import type { Summary } from "../../core/domain/models/summary";
 import type {
@@ -6,7 +6,6 @@ import type {
   PortfolioGeneratedSectionKey,
   ProfileSettings,
 } from "../../schema/portfolio";
-import { portfolioGeneratedContentSchema } from "../../schema/portfolio";
 import {
   buildPortfolioNarrativeSystemPrompt,
   buildPortfolioNarrativeUserPrompt,
@@ -21,35 +20,30 @@ export class AIPortfolioNarrativeGenerator
   constructor(private readonly model: LanguageModel) {}
 
   /**
-   * 入力コンテキストからポートフォリオ文章を生成します。
+   * 入力コンテキストからポートフォリオ文章をストリーミング生成します。
    *
    * @param input - 生成入力
-   * @returns 4セクションの生成結果
+   * @returns 生成テキストのストリーム
    */
-  async generate(input: {
+  generateStream(input: {
     profile: ProfileSettings;
-    selfPrDraft: string;
+    chatInput: string;
+    targetSection: PortfolioGeneratedSectionKey;
     selectedSummaries: Summary[];
     currentContent: PortfolioGeneratedContent;
-    targetSection?: PortfolioGeneratedSectionKey;
-  }): Promise<PortfolioGeneratedContent> {
-    const result = await generateObject({
+  }): AsyncIterable<string> {
+    const result = streamText({
       model: this.model,
-      schema: portfolioGeneratedContentSchema,
       system: buildPortfolioNarrativeSystemPrompt(input.targetSection),
       prompt: buildPortfolioNarrativeUserPrompt({
         profile: input.profile,
-        selfPrDraft: input.selfPrDraft,
+        chatInput: input.chatInput,
+        targetSection: input.targetSection,
         selectedSummaries: input.selectedSummaries,
         currentContent: input.currentContent,
       }),
     });
 
-    return {
-      selfPr: result.object.selfPr ?? "",
-      strengths: result.object.strengths ?? "",
-      learnings: result.object.learnings ?? "",
-      futureVision: result.object.futureVision ?? "",
-    };
+    return result.textStream;
   }
 }

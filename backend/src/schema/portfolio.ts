@@ -45,11 +45,22 @@ export const profileSettingsSchema = z.object({
 export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
 
 /**
+ * AI生成対象セクションの列挙
+ */
+export const portfolioGeneratedSectionEnum = z.enum([
+  "selfPr",
+  "strengths",
+  "learnings",
+  "futureVision",
+]);
+
+/**
  * AI文章生成の入力設定スキーマ
  */
 export const portfolioGenerationSettingsSchema = z.object({
   selectedSummaryIds: z.array(z.string()).max(5).optional().default([]),
-  selfPrDraft: z.string().optional().default(""),
+  chatInput: z.string().optional().default(""),
+  targetSection: portfolioGeneratedSectionEnum.optional().default("selfPr"),
 });
 
 /**
@@ -67,9 +78,11 @@ export const portfolioGeneratedContentSchema = z.object({
  */
 export const portfolioSettingsSchema = z.object({
   profile: profileSettingsSchema,
-  generation: portfolioGenerationSettingsSchema
-    .optional()
-    .default({ selectedSummaryIds: [], selfPrDraft: "" }),
+  generation: portfolioGenerationSettingsSchema.optional().default({
+    selectedSummaryIds: [],
+    chatInput: "",
+    targetSection: "selfPr",
+  }),
   generatedContent: portfolioGeneratedContentSchema.optional().default({
     selfPr: "",
     strengths: "",
@@ -105,45 +118,22 @@ export const savePortfolioRequestSchema = z.object({
 export type SavePortfolioRequest = z.infer<typeof savePortfolioRequestSchema>;
 
 /**
- * AI生成対象セクションの列挙
- */
-export const portfolioGeneratedSectionEnum = z.enum([
-  "selfPr",
-  "strengths",
-  "learnings",
-  "futureVision",
-]);
-
-/**
  * AI文章生成APIのリクエストスキーマ
  */
-export const generatePortfolioContentRequestSchema = z
-  .object({
-    selectedSummaryIds: z
-      .array(z.string().min(1))
-      .max(5, "サマリーは最大5件まで選択できます"),
-    selfPrDraft: z.string().optional().default(""),
-    profile: profileSettingsSchema,
-    currentContent: portfolioGeneratedContentSchema.optional().default({
-      selfPr: "",
-      strengths: "",
-      learnings: "",
-      futureVision: "",
-    }),
-    targetSection: portfolioGeneratedSectionEnum.optional(),
-  })
-  .superRefine((value, context) => {
-    if (
-      value.selectedSummaryIds.length === 0 &&
-      value.selfPrDraft.trim().length === 0
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "サマリーを1件以上選択するか、自己PR下書きを入力してください",
-        path: ["selfPrDraft"],
-      });
-    }
-  });
+export const generatePortfolioContentRequestSchema = z.object({
+  chatInput: z.string().trim().min(1, "自由入力テキストを入力してください"),
+  targetSection: portfolioGeneratedSectionEnum,
+  selectedSummaryIds: z
+    .array(z.string().min(1))
+    .max(5, "サマリーは最大5件まで選択できます"),
+  profile: profileSettingsSchema,
+  currentContent: portfolioGeneratedContentSchema.optional().default({
+    selfPr: "",
+    strengths: "",
+    learnings: "",
+    futureVision: "",
+  }),
+});
 
 /**
  * AI文章生成APIのリクエスト型

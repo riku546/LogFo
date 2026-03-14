@@ -52,7 +52,8 @@ const createTestSettings = (overrides = {}) => ({
   },
   generation: {
     selectedSummaryIds: [],
-    selfPrDraft: "",
+    chatInput: "",
+    targetSection: "selfPr",
   },
   generatedContent: {
     selfPr: "",
@@ -283,7 +284,7 @@ describe("Portfolio API Integration Test", () => {
     });
   });
   describe("portfolio generate (POST /api/portfolio/generate)", () => {
-    it("return 400 when summary and selfPrDraft are both empty", async () => {
+    it("return 400 when chatInput is empty", async () => {
       const token = await getAuthToken(
         "portfolio-generate-validation@example.com",
       );
@@ -297,8 +298,9 @@ describe("Portfolio API Integration Test", () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
+            chatInput: "",
+            targetSection: "selfPr",
             selectedSummaryIds: [],
-            selfPrDraft: "",
             profile: createTestSettings().profile,
             currentContent: {
               selfPr: "",
@@ -334,8 +336,9 @@ describe("Portfolio API Integration Test", () => {
             Authorization: `Bearer ${attackerToken}`,
           },
           body: JSON.stringify({
+            chatInput: "強みと将来をフォーマルに整えてください",
+            targetSection: "strengths",
             selectedSummaryIds: [otherSummaryId],
-            selfPrDraft: "",
             profile: createTestSettings().profile,
             currentContent: {
               selfPr: "",

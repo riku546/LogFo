@@ -10,18 +10,23 @@
 ### 1.2. コンポーネント構成 (`frontend/src/features/portfolio/`)
 
 - `ConfigSidebar`
-  - プロフィール編集
-  - AI文章生成入力（サマリー選択、自己PR下書き）
-  - 4項目一括生成/項目別再生成
-  - 生成結果編集
+  - AIチャット専用
+  - 上部: 時系列メッセージ（ユーザー入力 / AI応答）
+  - 下部: 入力フォーム（targetSectionセレクト + 自由入力テキスト + 送信）
+  - サマリー選択（任意、最大5件）
+  - ストリーミング中のテキスト表示
+  - ワンクリック適用（選択項目へ1件反映）
 - `LivePreviewPane`
   - `PortfolioPublicView` を利用し、編集中設定をリアルタイム表示
+  - ページ全体の閲覧/編集モード切替を反映
 - `PublishSettingsPanel`
   - 保存/公開設定導線
 - `PublishSettingsModal`
   - Slug、公開/非公開切替、公開URLコピー
 - `PortfolioPublicView`
   - 公開ページとプレビューで共通利用
+  - ビルダー画面では編集モード時に入力UIを表示
+  - 公開ページでは常に閲覧専用
   - タブ1: 経歴・スキル
   - タブ2: `PR・強み`（AI生成4セクションのみ）
 
@@ -35,22 +40,25 @@
   - `isSaving`
 - `settings` には以下を保持:
   - `profile`
-  - `generation`（`selectedSummaryIds`, `selfPrDraft`）
+  - `generation`（`selectedSummaryIds`, `chatInput`, `targetSection`）
   - `generatedContent`（`selfPr`, `strengths`, `learnings`, `futureVision`）
-- `page.tsx` 側で生成用状態を管理:
-  - `isGeneratingContent`
-  - `generatingTargetSection`
+- `page.tsx` 側でUI状態を管理:
+  - `isEditing`
+  - `isStreaming`
+  - `messages`
+  - `streamingCandidateText`
+  - `streamError`
 - 初期表示:
   - `GET /api/portfolio`
   - `GET /api/summary`（サマリー選択UI用）
 
 ### 1.4. 画面フロー
 
-1. サマリー選択（最大5件）・自己PR下書き入力
-2. `4項目を生成` 実行
-3. 必要に応じて `項目別再生成`
-4. テキストを手編集
-5. `保存` で確定
+1. ページ表示後、必要に応じて `編集モード` に切り替える
+2. 中央表示エリアでプロフィール / SNS / 経歴 / スキル / 生成済み4項目を直接編集する
+3. サイドバーAIチャットで targetSection を選択し、自由入力テキストを入力、任意でサマリーを選択する
+4. SSEで生成テキストをストリーミング表示し、完了後にワンクリック適用する
+5. 既存の `保存` で確定する
 
 ---
 
@@ -63,7 +71,7 @@
 - `GET /api/portfolio`（JWT必須）
   - 自分のポートフォリオ設定を取得
 - `POST /api/portfolio/generate`（JWT必須）
-  - AI文章生成（4項目一括/項目別再生成）
+  - AI文章生成（チャット入力ベース、SSEストリーミング）
 - `GET /api/summary`（JWT必須）
   - 自分のサマリー一覧を取得（生成入力UI向け）
 - `GET /portfolio/public/:slug`（認証不要）
@@ -72,20 +80,27 @@
 ### 2.2. `POST /api/portfolio/generate` 仕様
 
 - Request:
+  - `chatInput: string`（必須）
+  - `targetSection: "selfPr" | "strengths" | "learnings" | "futureVision"`（必須）
   - `selectedSummaryIds: string[]`（最大5件）
-  - `selfPrDraft: string`
   - `profile`
-  - `targetSection?: "selfPr" | "strengths" | "learnings" | "futureVision"`
-  - `currentContent`（項目別再生成時の参照用）
+  - `currentContent`（再提案時の文脈参照用）
 - Validation:
-  - `selectedSummaryIds` が空の場合、`selfPrDraft` は必須
+  - `chatInput` は必須
+  - `targetSection` は列挙値のみ許可
+  - `selectedSummaryIds` は0〜5件
   - 指定サマリーがユーザー所有であること
 - Response:
-  - `generatedContent`
-    - `selfPr`
-    - `strengths`
-    - `learnings`
-    - `futureVision`
+  - SSE（`text/event-stream`）
+  - イベント例:
+    - `delta`: 生成中テキスト断片
+    - `complete`: 生成完了テキスト
+    - `error`: エラー情報
+
+補足:
+
+- 生成結果の保存は即時実施しない。フロント側で候補テキストとして保持し、ユーザーがワンクリック適用後に保存ボタン押下で確定する。
+- ワンクリック適用時は `targetSection` で指定した1項目のみ更新する。
 
 ### 2.3. 公開取得フロー (`GET /portfolio/public/:slug`)
 
@@ -94,8 +109,10 @@
 3. `slug`, `settings` を返却
 
 補足:
+
 - 旧仕様の `summaries`, `roadmaps` は返却しない
 - 公開ページは `settings.generatedContent` のみを表示
+- 公開ページは閲覧専用で、編集UIは表示しない
 
 ### 2.4. エラーハンドリング
 
@@ -118,7 +135,8 @@
   - `skills[]`
 - `generation`
   - `selectedSummaryIds[]`
-  - `selfPrDraft`
+  - `chatInput`
+  - `targetSection`
 - `generatedContent`
   - `selfPr`
   - `strengths`
@@ -137,8 +155,8 @@
 ### 4.1. Backend
 
 - `POST /api/portfolio/generate`
-  - 正常系（全体生成、項目別再生成）
-  - 異常系（入力不足、6件以上、所有権違反）
+  - 正常系（targetSectionを指定してSSEで生成テキストを受信）
+  - 異常系（入力不足、section不正、6件以上、所有権違反）
 - `GET /api/summary`
   - 自分のサマリー一覧を返す
 - `GET /portfolio/public/:slug`
@@ -147,16 +165,25 @@
 ### 4.2. Frontend
 
 - サイドバー
+  - AIチャット専用であること
+  - 時系列メッセージ表示であること
+  - 入力欄が下部に固定されること
+  - targetSection の選択ができること
   - サマリー選択上限5件
-  - 入力不足時の生成制御
+  - 自由入力テキスト空の場合の生成制御
 - 生成フロー
-  - 一括生成 -> 編集 -> 保存
-  - 項目別再生成で対象項目のみ更新
+  - チャット送信 -> ストリーミング表示 -> ワンクリック適用 -> 保存
+  - 適用時に選択中1項目のみ更新されること
+- 編集フロー
+  - 閲覧/編集モード切替
+  - 中央表示エリアで全対象項目の編集が可能
 - 公開表示
   - `PR・強み` タブで4項目の非空表示
+  - 編集UIが出ないこと（閲覧専用）
 
 ## 5. 将来拡張
 
 - 生成文のトーン切替（フォーマル/カジュアル）
 - セクションごとの文字数ガイド強化
 - 公開先（企業・用途）別テンプレート最適化
+- AIチャット履歴の永続保存

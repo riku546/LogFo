@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  generatePortfolioContent,
+  generatePortfolioContentStream,
   PortfolioApiError,
   type PortfolioGeneratedSectionKey,
 } from "@/features/portfolio/api/portfolioApi";
-import { ConfigSidebar } from "@/features/portfolio/components/ConfigSidebar";
+import {
+  ConfigSidebar,
+  type PortfolioChatMessage,
+} from "@/features/portfolio/components/ConfigSidebar";
 import { LivePreviewPane } from "@/features/portfolio/components/LivePreviewPane";
 import { PublishSettingsModal } from "@/features/portfolio/components/PublishSettingsModal";
 import { PublishSettingsPanel } from "@/features/portfolio/components/PublishSettingsPanel";
@@ -40,10 +43,9 @@ export default function PortfolioBuilderPage() {
     [],
   );
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [generatingTargetSection, setGeneratingTargetSection] = useState<
-    PortfolioGeneratedSectionKey | "all" | null
-  >(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [messages, setMessages] = useState<PortfolioChatMessage[]>([]);
 
   /**
    * サマリー選択UI向けデータを読み込む
@@ -71,9 +73,7 @@ export default function PortfolioBuilderPage() {
    */
   const handleGenerateError = useCallback((error: unknown) => {
     if (error instanceof PortfolioApiError && error.statusCode === 400) {
-      toast.error(
-        "サマリーを1件以上選択するか、自己PR下書きを入力してください",
-      );
+      toast.error("自由入力テキストを入力してください");
       return;
     }
 
@@ -100,48 +100,208 @@ export default function PortfolioBuilderPage() {
     return null;
   }, []);
 
+  const createMessageId = useCallback((prefix: "user" | "assistant") => {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+
+    return `${prefix}-${Date.now()}`;
+  }, []);
+
+  const appendRequestMessages = useCallback(
+    (
+      userMessageId: string,
+      assistantMessageId: string,
+      chatInput: string,
+      targetSection: PortfolioGeneratedSectionKey,
+    ) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: userMessageId,
+          role: "user",
+          content: chatInput,
+          targetSection,
+          status: "done",
+        },
+        {
+          id: assistantMessageId,
+          role: "assistant",
+          content: "",
+          targetSection,
+          status: "streaming",
+        },
+      ]);
+    },
+    [],
+  );
+
+  const appendAssistantChunk = useCallback(
+    (assistantMessageId: string, chunk: string) => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantMessageId
+            ? {
+                ...message,
+                content: `${message.content}${chunk}`,
+              }
+            : message,
+        ),
+      );
+    },
+    [],
+  );
+
+  const completeAssistantMessage = useCallback(
+    (assistantMessageId: string, content: string) => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantMessageId
+            ? {
+                ...message,
+                content,
+                status: "done",
+              }
+            : message,
+        ),
+      );
+    },
+    [],
+  );
+
+  const failAssistantMessage = useCallback(
+    (assistantMessageId: string, fallbackMessage: string) => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantMessageId
+            ? {
+                ...message,
+                status: "error",
+                content: message.content || fallbackMessage,
+              }
+            : message,
+        ),
+      );
+    },
+    [],
+  );
+
   /**
    * AI文章生成を実行する
    */
-  const handleGenerateContent = useCallback(
-    async (targetSection?: PortfolioGeneratedSectionKey) => {
-      const token = getAuthToken();
-      if (!token) return;
+  const handleSendMessage = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) return;
+    const chatInput = settings.generation.chatInput;
+    const targetSection =
+      settings.generation.targetSection ??
+      ("selfPr" as PortfolioGeneratedSectionKey);
 
-      setIsGeneratingContent(true);
-      setGeneratingTargetSection(targetSection ?? "all");
+    if (!chatInput.trim()) {
+      toast.error("自由入力テキストを入力してください");
+      return;
+    }
 
-      try {
-        const generatedContent = await generatePortfolioContent(token, {
+    const userMessageId = createMessageId("user");
+    const assistantMessageId = createMessageId("assistant");
+
+    appendRequestMessages(
+      userMessageId,
+      assistantMessageId,
+      chatInput,
+      targetSection,
+    );
+
+    updateGeneration({ chatInput: "" });
+
+    setIsStreaming(true);
+    let completedText = "";
+
+    try {
+      await generatePortfolioContentStream(
+        token,
+        {
+          chatInput,
+          targetSection,
           selectedSummaryIds: settings.generation.selectedSummaryIds,
-          selfPrDraft: settings.generation.selfPrDraft,
           profile: settings.profile,
           currentContent: settings.generatedContent,
-          targetSection,
-        });
+        },
+        {
+          onDelta: (chunk) => {
+            completedText += chunk;
+            appendAssistantChunk(assistantMessageId, chunk);
+          },
+          onComplete: (text) => {
+            const resolvedText = text || completedText;
+            completeAssistantMessage(assistantMessageId, resolvedText);
+          },
+          onError: (message) => {
+            failAssistantMessage(assistantMessageId, message);
+          },
+        },
+      );
 
-        updateGeneratedContent(generatedContent);
-        toast.success(
-          targetSection
-            ? "指定した項目を再生成しました"
-            : "ポートフォリオ文章を生成しました",
-        );
-      } catch (error) {
-        handleGenerateError(error);
-      } finally {
-        setIsGeneratingContent(false);
-        setGeneratingTargetSection(null);
+      toast.success("ポートフォリオ文章の候補を生成しました");
+    } catch (error) {
+      handleGenerateError(error);
+      failAssistantMessage(
+        assistantMessageId,
+        "ポートフォリオ文章の生成に失敗しました",
+      );
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [
+    settings.generation.chatInput,
+    settings.generation.targetSection,
+    settings.generation.selectedSummaryIds,
+    settings.generatedContent,
+    settings.profile,
+    appendAssistantChunk,
+    appendRequestMessages,
+    completeAssistantMessage,
+    createMessageId,
+    failAssistantMessage,
+    getAuthToken,
+    handleGenerateError,
+    updateGeneration,
+  ]);
+
+  /**
+   * メッセージの本文を選択項目へ反映する
+   */
+  const handleApplyMessage = useCallback(
+    (messageId: string) => {
+      const targetMessage = messages.find(
+        (message) => message.id === messageId,
+      );
+      if (!targetMessage || targetMessage.role !== "assistant") {
+        return;
       }
+
+      if (!targetMessage.content.trim()) {
+        toast.error("適用できる生成本文がありません");
+        return;
+      }
+
+      updateGeneratedContent({
+        [targetMessage.targetSection]: targetMessage.content,
+      });
+      const sectionLabelMap: Record<PortfolioGeneratedSectionKey, string> = {
+        selfPr: "自己PR",
+        strengths: "強み",
+        learnings: "学び",
+        futureVision: "将来",
+      };
+      toast.success(
+        `${sectionLabelMap[targetMessage.targetSection]} に生成本文を反映しました`,
+      );
     },
-    [
-      settings.generation.selectedSummaryIds,
-      settings.generation.selfPrDraft,
-      settings.generatedContent,
-      settings.profile,
-      getAuthToken,
-      handleGenerateError,
-      updateGeneratedContent,
-    ],
+    [messages, updateGeneratedContent],
   );
 
   if (isLoading) {
@@ -167,16 +327,21 @@ export default function PortfolioBuilderPage() {
       <div className="relative flex flex-col lg:flex-row flex-1 min-h-0">
         <ConfigSidebar
           settings={settings}
+          onUpdateGeneration={updateGeneration}
+          availableSummaries={availableSummaries}
+          isStreaming={isStreaming}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          onApplyMessage={handleApplyMessage}
+        />
+        <LivePreviewPane
+          settings={settings}
+          isEditing={isEditing}
+          onToggleEditing={() => setIsEditing((prev) => !prev)}
           onUpdateProfile={updateProfile}
           onUpdateSocialLinks={updateSocialLinks}
-          onUpdateGeneration={updateGeneration}
           onUpdateGeneratedContent={updateGeneratedContent}
-          availableSummaries={availableSummaries}
-          isGeneratingContent={isGeneratingContent}
-          generatingTargetSection={generatingTargetSection}
-          onGenerateContent={handleGenerateContent}
         />
-        <LivePreviewPane settings={settings} />
       </div>
 
       <PublishSettingsPanel

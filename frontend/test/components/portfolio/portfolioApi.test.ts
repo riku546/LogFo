@@ -36,7 +36,8 @@ const createPayload = (): SavePortfolioPayload => ({
     },
     generation: {
       selectedSummaryIds: [],
-      selfPrDraft: "",
+      chatInput: "",
+      targetSection: "selfPr",
     },
     generatedContent: {
       selfPr: "",

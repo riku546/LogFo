@@ -20,11 +20,25 @@ const createSummaryRepository = () =>
 
 const createNarrativeGenerator = () =>
   ({
-    generate: vi.fn<PortfolioNarrativeGenerator["generate"]>(),
+    generateStream: vi.fn<PortfolioNarrativeGenerator["generateStream"]>(),
   }) satisfies PortfolioNarrativeGenerator;
 
+const toStream = async function* (chunks: string[]) {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+};
+
+const collectStream = async (stream: AsyncIterable<string>) => {
+  let text = "";
+  for await (const chunk of stream) {
+    text += chunk;
+  }
+  return text;
+};
+
 describe("GeneratePortfolioNarrativeUsecase", () => {
-  it("全項目生成結果を返す", async () => {
+  it("ストリーミング結果を返す", async () => {
     const summaryRepository = createSummaryRepository();
     const generator = createNarrativeGenerator();
 
@@ -40,22 +54,18 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
       },
     ]);
 
-    generator.generate.mockResolvedValue({
-      selfPr: "自己PR",
-      strengths: "強み",
-      learnings: "学び",
-      futureVision: "将来",
-    });
+    generator.generateStream.mockReturnValue(toStream(["自己", "PR"]));
 
     const usecase = new GeneratePortfolioNarrativeUsecase(
       summaryRepository,
       generator,
     );
 
-    const result = await usecase.execute({
+    const stream = await usecase.execute({
       userId: "user-1",
       selectedSummaryIds: ["summary-1"],
-      selfPrDraft: "",
+      chatInput: "4項目をフォーマルに生成してください",
+      targetSection: "selfPr",
       profile: {
         displayName: "riku",
         bio: "",
@@ -72,35 +82,26 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
       },
     });
 
-    expect(result).toEqual({
-      selfPr: "自己PR",
-      strengths: "強み",
-      learnings: "学び",
-      futureVision: "将来",
-    });
+    await expect(collectStream(stream)).resolves.toBe("自己PR");
   });
 
-  it("項目別再生成では対象項目のみ置き換える", async () => {
+  it("生成器ストリームをそのまま返す", async () => {
     const summaryRepository = createSummaryRepository();
     const generator = createNarrativeGenerator();
 
     summaryRepository.findByIdsForUser.mockResolvedValue([]);
-    generator.generate.mockResolvedValue({
-      selfPr: "新しい自己PR",
-      strengths: "",
-      learnings: "",
-      futureVision: "",
-    });
+    generator.generateStream.mockReturnValue(toStream(["新しい", "自己PR"]));
 
     const usecase = new GeneratePortfolioNarrativeUsecase(
       summaryRepository,
       generator,
     );
 
-    const result = await usecase.execute({
+    const stream = await usecase.execute({
       userId: "user-1",
       selectedSummaryIds: [],
-      selfPrDraft: "下書きあり",
+      chatInput: "自己PRを改善してください",
+      targetSection: "selfPr",
       profile: {
         displayName: "riku",
         bio: "",
@@ -115,15 +116,9 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
         learnings: "旧学び",
         futureVision: "旧将来",
       },
-      targetSection: "selfPr",
     });
 
-    expect(result).toEqual({
-      selfPr: "新しい自己PR",
-      strengths: "旧強み",
-      learnings: "旧学び",
-      futureVision: "旧将来",
-    });
+    await expect(collectStream(stream)).resolves.toBe("新しい自己PR");
   });
 
   it("所有していないサマリーが含まれる場合はエラー", async () => {
@@ -151,7 +146,8 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
       usecase.execute({
         userId: "user-1",
         selectedSummaryIds: ["summary-1", "summary-2"],
-        selfPrDraft: "",
+        chatInput: "自己PRを生成してください",
+        targetSection: "selfPr",
         profile: {
           displayName: "riku",
           bio: "",

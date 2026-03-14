@@ -1,5 +1,7 @@
 import { client } from "@/lib/client";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+
 /**
  * ポートフォリオ機能に関するAPI通信ユーティリティ
  *
@@ -41,7 +43,8 @@ export interface ProfileSettings {
 
 export interface PortfolioGenerationSettings {
   selectedSummaryIds: string[];
-  selfPrDraft: string;
+  chatInput: string;
+  targetSection: PortfolioGeneratedSectionKey;
 }
 
 export interface PortfolioGeneratedContent {
@@ -85,12 +88,26 @@ export type PortfolioGeneratedSectionKey =
   | "futureVision";
 
 export interface GeneratePortfolioContentPayload {
+  chatInput: string;
+  targetSection: PortfolioGeneratedSectionKey;
   selectedSummaryIds: string[];
-  selfPrDraft: string;
   profile: ProfileSettings;
   currentContent: PortfolioGeneratedContent;
-  targetSection?: PortfolioGeneratedSectionKey;
 }
+
+export interface PortfolioContentStreamHandlers {
+  onDelta: (chunk: string) => void;
+  onComplete: (text: string) => void;
+  onError?: (message: string) => void;
+}
+
+type PortfolioSseEvent = {
+  eventName: string;
+  payloadData: {
+    text?: string;
+    message?: string;
+  };
+};
 
 // ===== APIエラー =====
 
@@ -114,6 +131,55 @@ const getHeaders = (token: string, includeContentType = true) => {
     headers["Content-Type"] = "application/json";
   }
   return headers;
+};
+
+const parsePortfolioSseEvent = (block: string): PortfolioSseEvent | null => {
+  const lines = block.split(/\r?\n/);
+  const eventName = lines
+    .find((line) => line.startsWith("event:"))
+    ?.replace("event:", "")
+    .trim();
+  const dataLine = lines
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.replace("data:", "").trim())
+    .join("\n");
+
+  if (!(eventName && dataLine)) {
+    return null;
+  }
+
+  try {
+    return {
+      eventName,
+      payloadData: JSON.parse(dataLine) as {
+        text?: string;
+        message?: string;
+      },
+    };
+  } catch {
+    return null;
+  }
+};
+
+const dispatchPortfolioSseEvent = (
+  event: PortfolioSseEvent,
+  handlers: PortfolioContentStreamHandlers,
+) => {
+  if (event.eventName === "delta" && event.payloadData.text) {
+    handlers.onDelta(event.payloadData.text);
+    return;
+  }
+
+  if (event.eventName === "complete") {
+    handlers.onComplete(event.payloadData.text ?? "");
+    return;
+  }
+
+  if (event.eventName === "error") {
+    handlers.onError?.(
+      event.payloadData.message ?? "ポートフォリオ文章の生成に失敗しました",
+    );
+  }
 };
 
 // ===== API関数 =====
@@ -218,22 +284,72 @@ export const generatePortfolioContent = async (
   token: string,
   payload: GeneratePortfolioContentPayload,
 ): Promise<PortfolioGeneratedContent> => {
-  const response = await client.api.portfolio.generate.$post(
-    {
-      json: payload,
-    },
-    { headers: getHeaders(token) },
+  void token;
+  void payload;
+  throw new Error(
+    "generatePortfolioContentは廃止予定です。generatePortfolioContentStreamを利用してください",
   );
+};
 
-  if (!response.ok) {
+/**
+ * ポートフォリオ向け文章をSSEでストリーミング生成する
+ */
+export const generatePortfolioContentStream = async (
+  token: string,
+  payload: GeneratePortfolioContentPayload,
+  handlers: PortfolioContentStreamHandlers,
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/portfolio/generate`, {
+    method: "POST",
+    headers: {
+      ...getHeaders(token),
+      Accept: "text/event-stream",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!(response.ok && response.body)) {
     throw new PortfolioApiError(
       "ポートフォリオ文章の生成に失敗しました",
       response.status,
     );
   }
 
-  const body = (await response.json()) as {
-    generatedContent: PortfolioGeneratedContent;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const eventSeparatorPattern = /\r?\n\r?\n/;
+
+  const handleEventBlock = (block: string) => {
+    const parsedEvent = parsePortfolioSseEvent(block);
+    if (!parsedEvent) {
+      return;
+    }
+
+    dispatchPortfolioSseEvent(parsedEvent, handlers);
   };
-  return body.generatedContent;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      buffer += decoder.decode();
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+
+    let separatorMatch = buffer.match(eventSeparatorPattern);
+    while (separatorMatch?.index !== undefined) {
+      const separatorStartIndex = separatorMatch.index;
+      const eventBlock = buffer.slice(0, separatorStartIndex);
+      buffer = buffer.slice(separatorStartIndex + separatorMatch[0].length);
+      handleEventBlock(eventBlock);
+      separatorMatch = buffer.match(eventSeparatorPattern);
+    }
+  }
+
+  if (buffer.trim()) {
+    handleEventBlock(buffer.trim());
+  }
 };

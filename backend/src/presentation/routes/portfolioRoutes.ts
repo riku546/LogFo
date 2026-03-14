@@ -83,6 +83,7 @@ export const createPortfolioRoutes = () => {
         async (c) => {
           const userId = getUserIdFromJwt(c);
           const input = c.req.valid("json");
+          const encoder = new TextEncoder();
 
           const db = drizzle(c.env.DB);
           const summaryRepository = new DrizzleSummaryRepository(db);
@@ -94,16 +95,52 @@ export const createPortfolioRoutes = () => {
           );
 
           try {
-            const generatedContent = await usecase.execute({
+            const stream = await usecase.execute({
               userId,
+              chatInput: input.chatInput,
+              targetSection: input.targetSection,
               selectedSummaryIds: input.selectedSummaryIds,
-              selfPrDraft: input.selfPrDraft,
               profile: input.profile,
               currentContent: input.currentContent,
-              targetSection: input.targetSection,
             });
 
-            return c.json({ generatedContent });
+            const readableStream = new ReadableStream<Uint8Array>({
+              async start(controller) {
+                let generatedText = "";
+
+                try {
+                  for await (const chunk of stream) {
+                    generatedText += chunk;
+                    controller.enqueue(
+                      encoder.encode(
+                        `event: delta\ndata: ${JSON.stringify({ text: chunk })}\n\n`,
+                      ),
+                    );
+                  }
+
+                  controller.enqueue(
+                    encoder.encode(
+                      `event: complete\ndata: ${JSON.stringify({ text: generatedText })}\n\n`,
+                    ),
+                  );
+                  controller.close();
+                } catch {
+                  controller.enqueue(
+                    encoder.encode(
+                      `event: error\ndata: ${JSON.stringify({ message: "ポートフォリオ文章の生成に失敗しました" })}\n\n`,
+                    ),
+                  );
+                  controller.close();
+                }
+              },
+            });
+
+            return c.newResponse(readableStream, 200, {
+              "Content-Type": "text/event-stream; charset=utf-8",
+              "Cache-Control": "no-cache, no-transform",
+              "X-Accel-Buffering": "no",
+              Connection: "keep-alive",
+            });
           } catch (error) {
             handleDomainError(error);
           }

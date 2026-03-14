@@ -35,7 +35,8 @@ const createDefaultSettings = (): PortfolioSettings => ({
   },
   generation: {
     selectedSummaryIds: [],
-    selfPrDraft: "",
+    chatInput: "",
+    targetSection: "selfPr",
   },
   generatedContent: {
     selfPr: "",
@@ -55,6 +56,11 @@ const normalizePortfolioSettings = (
   settings: PortfolioSettings,
 ): PortfolioSettings => {
   const defaultSettings = createDefaultSettings();
+  const legacySelfPrDraft = (
+    settings.generation as PortfolioSettings["generation"] & {
+      selfPrDraft?: string;
+    }
+  )?.selfPrDraft;
 
   return {
     ...defaultSettings,
@@ -73,7 +79,8 @@ const normalizePortfolioSettings = (
       ...defaultSettings.generation,
       ...settings.generation,
       selectedSummaryIds: settings.generation?.selectedSummaryIds ?? [],
-      selfPrDraft: settings.generation?.selfPrDraft ?? "",
+      chatInput: settings.generation?.chatInput ?? legacySelfPrDraft ?? "",
+      targetSection: settings.generation?.targetSection ?? "selfPr",
     },
     generatedContent: {
       ...defaultSettings.generatedContent,

@@ -31,28 +31,24 @@ const formatSelectedSummaries = (summaries: Summary[]): string => {
 /**
  * AI文章生成用のシステムプロンプトを構築します。
  *
- * @param targetSection - 項目別再生成対象。未指定なら全項目生成
+ * @param targetSection - 生成対象のセクション
  * @returns システムプロンプト
  */
 export const buildPortfolioNarrativeSystemPrompt = (
-  targetSection?: PortfolioGeneratedSectionKey,
+  targetSection: PortfolioGeneratedSectionKey,
 ): string => {
-  const targetInstruction = targetSection
-    ? `今回は「${sectionLabelMap[targetSection]}」のみを更新してください。ほかの項目は currentContent を維持してください。`
-    : "4項目すべてを生成してください。";
-
   return `あなたは就活・転職向けの文章作成に強いキャリアライターです。
-ユーザーのプロフィール、選択サマリー、自己PR下書きを材料に、ポートフォリオ用の文章を作成してください。
+ユーザーのプロフィール、選択サマリー、自由入力テキストを材料に、ポートフォリオ用の文章を作成してください。
 
 # 方針
 - 文体はフォーマルかつ具体的にする
-- 各項目は200〜350字を目安にする
+- 生成する文章は200〜350字を目安にする
 - 入力にない事実を捏造しない
 - 技術名や取り組みを可能な限り明記する
-- 出力は指定スキーマに厳密に従う
+- 出力は本文テキストのみとし、前置き・見出し・箇条書きを付けない
 
 # 生成対象
-${targetInstruction}
+今回は「${sectionLabelMap[targetSection]}」のみを生成してください。
 `;
 };
 
@@ -60,19 +56,22 @@ ${targetInstruction}
  * AI文章生成用のユーザープロンプトを構築します。
  *
  * @param profile - プロフィール情報
- * @param selfPrDraft - 自己PR下書き
+ * @param chatInput - 自由入力テキスト
+ * @param targetSection - 生成対象セクション
  * @param selectedSummaries - 選択サマリー
  * @param currentContent - 既存生成内容
  * @returns ユーザープロンプト
  */
 export const buildPortfolioNarrativeUserPrompt = ({
   profile,
-  selfPrDraft,
+  chatInput,
+  targetSection,
   selectedSummaries,
   currentContent,
 }: {
   profile: ProfileSettings;
-  selfPrDraft: string;
+  chatInput: string;
+  targetSection: PortfolioGeneratedSectionKey;
   selectedSummaries: Summary[];
   currentContent: Record<PortfolioGeneratedSectionKey, string>;
 }): string => {
@@ -102,8 +101,11 @@ ${formattedCareerStories || "経歴未設定"}
 スキル:
 ${formattedSkills}
 
-# 自己PR下書き
-${selfPrDraft.trim() || "下書きなし"}
+# 自由入力テキスト
+${chatInput.trim() || "未入力"}
+
+# 生成対象
+${sectionLabelMap[targetSection]}
 
 # 選択サマリー
 ${formatSelectedSummaries(selectedSummaries)}

@@ -10,20 +10,20 @@ const { routerMock } = vi.hoisted(() => ({
 
 vi.mock("@/features/portfolio/components/ConfigSidebar", () => ({
   ConfigSidebar: ({
-    onUpdateProfile,
-    onGenerateContent,
+    onUpdateGeneration,
+    onSendMessage,
   }: {
-    onUpdateProfile: (value: { displayName: string }) => void;
-    onGenerateContent: () => void;
+    onUpdateGeneration: (value: { chatInput: string }) => void;
+    onSendMessage: () => void;
   }) => (
     <div>
       <button
         type="button"
-        onClick={() => onUpdateProfile({ displayName: "Riku" })}
+        onClick={() => onUpdateGeneration({ chatInput: "生成してください" })}
       >
-        プロフィール更新
+        チャット入力
       </button>
-      <button type="button" onClick={() => onGenerateContent()}>
+      <button type="button" onClick={() => onSendMessage()}>
         生成
       </button>
     </div>
@@ -31,7 +31,20 @@ vi.mock("@/features/portfolio/components/ConfigSidebar", () => ({
 }));
 
 vi.mock("@/features/portfolio/components/LivePreviewPane", () => ({
-  LivePreviewPane: () => <div data-testid="preview" />,
+  LivePreviewPane: ({
+    onUpdateProfile,
+  }: {
+    onUpdateProfile: (value: { displayName: string }) => void;
+  }) => (
+    <div data-testid="preview">
+      <button
+        type="button"
+        onClick={() => onUpdateProfile({ displayName: "Riku" })}
+      >
+        プロフィール更新
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock("@/features/portfolio/components/PublishSettingsPanel", () => ({
@@ -89,7 +102,7 @@ vi.mock("@/features/portfolio/api/portfolioApi", async () => {
     ...actual,
     fetchMyPortfolio: vi.fn(),
     savePortfolio: vi.fn(),
-    generatePortfolioContent: vi.fn(),
+    generatePortfolioContentStream: vi.fn(),
   };
 });
 
@@ -111,12 +124,12 @@ describe("Portfolio integration flow", () => {
 
     vi.mocked(portfolioApi.fetchMyPortfolio).mockResolvedValue(null);
     vi.mocked(portfolioApi.savePortfolio).mockResolvedValue("portfolio-1");
-    vi.mocked(portfolioApi.generatePortfolioContent).mockResolvedValue({
-      selfPr: "generated self pr",
-      strengths: "generated strengths",
-      learnings: "generated learnings",
-      futureVision: "generated future",
-    });
+    vi.mocked(portfolioApi.generatePortfolioContentStream).mockImplementation(
+      async (_token, _payload, handlers) => {
+        handlers.onDelta("generated self pr");
+        handlers.onComplete("generated self pr");
+      },
+    );
     vi.mocked(summaryApi.fetchMySummaries).mockResolvedValue([]);
   });
 
@@ -125,11 +138,12 @@ describe("Portfolio integration flow", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "プロフィール更新" }),
+        screen.getByRole("button", { name: "チャット入力" }),
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "保存" })).toBeInTheDocument();
     });
 
+    fireEvent.click(screen.getByRole("button", { name: "チャット入力" }));
     fireEvent.click(screen.getByRole("button", { name: "プロフィール更新" }));
     fireEvent.click(screen.getByRole("button", { name: "生成" }));
     fireEvent.click(screen.getByRole("button", { name: "公開設定" }));
@@ -137,7 +151,7 @@ describe("Portfolio integration flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => {
-      expect(portfolioApi.generatePortfolioContent).toHaveBeenCalled();
+      expect(portfolioApi.generatePortfolioContentStream).toHaveBeenCalled();
       expect(portfolioApi.savePortfolio).toHaveBeenCalled();
     });
 
