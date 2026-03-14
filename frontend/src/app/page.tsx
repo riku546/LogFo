@@ -19,6 +19,12 @@ export default function Home() {
           >
             無料で始める
           </Link>
+          <Link
+            href="/guide"
+            className="cursor-pointer rounded-xl bg-secondary px-6 py-3 font-semibold dark:text-white transition-all hover:bg-slate-200 hover:dark:bg-slate-800 hover:shadow-lg active:scale-95 shadow-lg shadow-slate-500/20"
+          >
+            使い方ガイド
+          </Link>
         </div>
       </div>
     </div>

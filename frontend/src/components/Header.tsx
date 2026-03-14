@@ -19,6 +19,7 @@ import { fetchAuthSession } from "@/features/auth/api/authApi";
 
 const NAVIGATION_ITEMS = [
   { href: "/", label: "ホーム" },
+  { href: "/guide", label: "ガイド" },
   { href: "/roadmap", label: "ロードマップ" },
   { href: "/dashboard", label: "ダッシュボード" },
   { href: "/summary", label: "サマリー" },
