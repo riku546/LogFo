@@ -25,7 +25,7 @@ description: Use this skill when the user asks to create a PR description, summa
 - PR タイトル案もあわせて提案する。
 - 重要な変更点を優先して要約する。
 - 自動生成ファイルや軽微なノイズは必要に応じて省略する。
-- 出力は Markdown で書く。
+- チャット上にmarkdownの埋め込みとして表示してください。コピーとしてすぐに使えるように、コードブロックで囲むこと。
 
 ## 出力形式
 

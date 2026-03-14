@@ -56,4 +56,3 @@ description: Use this skill when the user asks to create a commit, propose a com
 
 - 実行した検証結果を先に簡潔に示す。
 - コミット未実行なら、提案メッセージをそのまま使える形で示す。
-- チャット上にmarkdownの埋め込みとして表示してください。コピーとしてすぐに使えるように、コードブロックで囲むこと。
