@@ -146,11 +146,11 @@ export default function PortfolioBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="relative flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
-        <div className="absolute top-10 left-10 h-44 w-44 rounded-full bg-blue-400/15 blur-3xl" />
-        <div className="absolute bottom-0 right-10 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl" />
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
+        <div className="absolute top-10 left-10 h-44 w-44 rounded-full bg-blue-400/10 blur-3xl" />
+        <div className="absolute bottom-0 right-10 h-56 w-56 rounded-full bg-blue-300/10 blur-3xl" />
+        <div className="glass space-y-3 rounded-2xl px-8 py-7 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
           <p className="text-sm text-slate-500 dark:text-slate-400">
             読み込み中...
           </p>
@@ -160,9 +160,9 @@ export default function PortfolioBuilderPage() {
   }
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-900 overflow-hidden">
-      <div className="absolute top-12 left-8 h-56 w-56 rounded-full bg-blue-400/15 blur-3xl" />
-      <div className="absolute -bottom-10 right-10 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+    <div className="relative flex h-[calc(100vh-64px)] flex-col overflow-hidden bg-background">
+      <div className="absolute top-12 left-8 h-56 w-56 rounded-full bg-blue-400/10 blur-3xl" />
+      <div className="absolute -bottom-10 right-10 h-64 w-64 rounded-full bg-blue-300/10 blur-3xl" />
 
       <div className="relative flex flex-col lg:flex-row flex-1 min-h-0">
         <ConfigSidebar

@@ -52,8 +52,8 @@ export default function RoadmapDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
-        <div className="flex items-center gap-3 text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="glass flex items-center gap-3 rounded-2xl px-6 py-4 text-slate-500">
           <svg
             className="h-6 w-6 animate-spin"
             viewBox="0 0 24 24"
@@ -83,14 +83,16 @@ export default function RoadmapDetailPage() {
 
   if (!roadmap) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
-        <p className="text-slate-500">ロードマップが見つかりません</p>
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <p className="glass rounded-2xl px-6 py-4 text-slate-500">
+          ロードマップが見つかりません
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+    <div className="min-h-screen bg-background py-12">
       <div className="mx-auto max-w-4xl px-4">
         {/* ヘッダー */}
         <div className="mb-8 flex items-center justify-between">
@@ -98,7 +100,7 @@ export default function RoadmapDetailPage() {
             <button
               type="button"
               onClick={() => router.push("/roadmap")}
-              className="mb-2 cursor-pointer text-sm text-blue-500 hover:text-blue-600"
+              className="mb-2 cursor-pointer text-sm text-blue-600 transition-colors duration-300 hover:text-blue-700"
             >
               ← ロードマップ一覧
             </button>
@@ -115,7 +117,7 @@ export default function RoadmapDetailPage() {
                 <button
                   type="button"
                   onClick={cancelEditing}
-                  className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+                  className="cursor-pointer rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-300 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
                 >
                   キャンセル
                 </button>
@@ -123,7 +125,7 @@ export default function RoadmapDetailPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+                  className="cursor-pointer rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-blue-700 disabled:opacity-50"
                 >
                   {isSaving ? "保存中..." : "保存する"}
                 </button>
@@ -133,14 +135,14 @@ export default function RoadmapDetailPage() {
                 <button
                   type="button"
                   onClick={startEditing}
-                  className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+                  className="cursor-pointer rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-blue-700"
                 >
                   編集する
                 </button>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="cursor-pointer rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                  className="cursor-pointer rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-all duration-300 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
                   削除
                 </button>
@@ -154,7 +156,7 @@ export default function RoadmapDetailPage() {
 
         {/* サマリー */}
         {roadmap.summary && (
-          <div className="mb-6 rounded-2xl border border-blue-100 bg-white/80 p-6 shadow-lg backdrop-blur-sm dark:border-blue-900 dark:bg-slate-900/80">
+          <div className="glass mb-6 rounded-2xl p-6">
             <h2 className="mb-3 text-lg font-bold text-slate-800 dark:text-slate-100">
               📋 分析サマリー
             </h2>

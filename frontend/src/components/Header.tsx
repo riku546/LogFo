@@ -106,7 +106,7 @@ export function Header() {
 
   return (
     <header className="glass fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           className="flex items-center gap-2 transition-opacity hover:opacity-80"
@@ -116,7 +116,7 @@ export function Header() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
