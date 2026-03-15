@@ -47,7 +47,7 @@ export const createAuthIntegrationRoutes = () => {
       const state = await sign(statePayload, c.env.JWT_SECRET, "HS256");
 
       if (provider === "github") {
-        const clientId = c.env.GITHUB_CLIENT_ID;
+        const clientId = c.env.OAUTH_GITHUB_CLIENT_ID;
         if (!clientId)
           return c.json({ message: "GitHub Client ID is not configured" }, 500);
 
@@ -65,7 +65,7 @@ export const createAuthIntegrationRoutes = () => {
       }
 
       if (provider === "wakatime") {
-        const clientId = c.env.WAKATIME_APP_ID;
+        const clientId = c.env.OAUTH_WAKATIME_APP_ID;
         if (!clientId)
           return c.json({ message: "WakaTime App ID is not configured" }, 500);
 
@@ -102,8 +102,8 @@ async function handleGithubCallback(
       Accept: "application/json",
     },
     body: JSON.stringify({
-      client_id: c.env.GITHUB_CLIENT_ID,
-      client_secret: c.env.GITHUB_CLIENT_SECRET,
+      client_id: c.env.OAUTH_GITHUB_CLIENT_ID,
+      client_secret: c.env.OAUTH_GITHUB_CLIENT_SECRET,
       code,
     }),
   });
@@ -152,8 +152,8 @@ async function handleWakatimeCallback(
       Accept: "application/json",
     },
     body: new URLSearchParams({
-      client_id: c.env.WAKATIME_APP_ID,
-      client_secret: c.env.WAKATIME_APP_SECRET,
+      client_id: c.env.OAUTH_WAKATIME_APP_ID,
+      client_secret: c.env.OAUTH_WAKATIME_APP_SECRET,
       grant_type: "authorization_code",
       code,
       redirect_uri: `${new URL(c.req.url).origin}/auth/wakatime/callback`,

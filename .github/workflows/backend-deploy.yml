@@ -47,6 +47,10 @@ jobs:
             CLOUDFLARE_D1_TOKEN
             FRONTEND_ORIGIN
             OPENROUTER_API_KEY
+            OAUTH_GITHUB_CLIENT_SECRET
+            OAUTH_GITHUB_CLIENT_ID
+            OAUTH_WAKATIME_APP_SECRET
+            OAUTH_WAKATIME_APP_ID
             
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -55,3 +59,7 @@ jobs:
           CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
           FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OAUTH_GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          OAUTH_GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          OAUTH_WAKATIME_APP_SECRET: ${{ secrets.OAUTH_WAKATIME_APP_SECRET }}
+          OAUTH_WAKATIME_APP_ID: ${{ secrets.OAUTH_WAKATIME_APP_ID }}
