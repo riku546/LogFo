@@ -301,7 +301,6 @@ describe("Portfolio API Integration Test", () => {
             chatInput: "",
             targetSection: "selfPr",
             selectedSummaryIds: [],
-            profile: createTestSettings().profile,
             currentContent: {
               selfPr: "",
               strengths: "",
@@ -339,7 +338,6 @@ describe("Portfolio API Integration Test", () => {
             chatInput: "強みと将来をフォーマルに整えてください",
             targetSection: "strengths",
             selectedSummaryIds: [otherSummaryId],
-            profile: createTestSettings().profile,
             currentContent: {
               selfPr: "",
               strengths: "",

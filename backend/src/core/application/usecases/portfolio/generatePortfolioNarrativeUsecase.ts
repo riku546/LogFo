@@ -1,7 +1,6 @@
 import type {
   PortfolioGeneratedContent,
   PortfolioGeneratedSectionKey,
-  ProfileSettings,
 } from "../../../../schema/portfolio";
 import type { Summary } from "../../../domain/models/summary";
 import type { SummaryRepository } from "../../interfaces/summaryRepository";
@@ -14,7 +13,6 @@ export interface GeneratePortfolioNarrativeInput {
   readonly selectedSummaryIds: string[];
   readonly chatInput: string;
   readonly targetSection: PortfolioGeneratedSectionKey;
-  readonly profile: ProfileSettings;
   readonly currentContent: PortfolioGeneratedContent;
 }
 
@@ -29,7 +27,6 @@ export interface PortfolioNarrativeGenerator {
    * @returns 4セクションの生成結果
    */
   generateStream(input: {
-    profile: ProfileSettings;
     chatInput: string;
     targetSection: PortfolioGeneratedSectionKey;
     selectedSummaries: Summary[];
@@ -85,7 +82,6 @@ export class GeneratePortfolioNarrativeUsecase {
       .filter((summary): summary is Summary => summary !== undefined);
 
     return this.narrativeGenerator.generateStream({
-      profile: input.profile,
       chatInput: input.chatInput,
       targetSection: input.targetSection,
       selectedSummaries: orderedSummaries,

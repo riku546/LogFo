@@ -91,7 +91,6 @@ export interface GeneratePortfolioContentPayload {
   chatInput: string;
   targetSection: PortfolioGeneratedSectionKey;
   selectedSummaryIds: string[];
-  profile: ProfileSettings;
   currentContent: PortfolioGeneratedContent;
 }
 

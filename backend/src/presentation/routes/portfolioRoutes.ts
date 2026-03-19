@@ -100,7 +100,6 @@ export const createPortfolioRoutes = () => {
               chatInput: input.chatInput,
               targetSection: input.targetSection,
               selectedSummaryIds: input.selectedSummaryIds,
-              profile: input.profile,
               currentContent: input.currentContent,
             });
 
