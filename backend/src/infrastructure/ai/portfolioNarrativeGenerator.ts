@@ -4,7 +4,6 @@ import type { Summary } from "../../core/domain/models/summary";
 import type {
   PortfolioGeneratedContent,
   PortfolioGeneratedSectionKey,
-  ProfileSettings,
 } from "../../schema/portfolio";
 import {
   buildPortfolioNarrativeSystemPrompt,
@@ -26,7 +25,6 @@ export class AIPortfolioNarrativeGenerator
    * @returns 生成テキストのストリーム
    */
   generateStream(input: {
-    profile: ProfileSettings;
     chatInput: string;
     targetSection: PortfolioGeneratedSectionKey;
     selectedSummaries: Summary[];
@@ -36,7 +34,6 @@ export class AIPortfolioNarrativeGenerator
       model: this.model,
       system: buildPortfolioNarrativeSystemPrompt(input.targetSection),
       prompt: buildPortfolioNarrativeUserPrompt({
-        profile: input.profile,
         chatInput: input.chatInput,
         targetSection: input.targetSection,
         selectedSummaries: input.selectedSummaries,

@@ -66,14 +66,6 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
       selectedSummaryIds: ["summary-1"],
       chatInput: "4項目をフォーマルに生成してください",
       targetSection: "selfPr",
-      profile: {
-        displayName: "riku",
-        bio: "",
-        avatarUrl: "",
-        socialLinks: {},
-        careerStories: [],
-        skills: [],
-      },
       currentContent: {
         selfPr: "",
         strengths: "",
@@ -102,14 +94,6 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
       selectedSummaryIds: [],
       chatInput: "自己PRを改善してください",
       targetSection: "selfPr",
-      profile: {
-        displayName: "riku",
-        bio: "",
-        avatarUrl: "",
-        socialLinks: {},
-        careerStories: [],
-        skills: [],
-      },
       currentContent: {
         selfPr: "旧自己PR",
         strengths: "旧強み",
@@ -148,14 +132,6 @@ describe("GeneratePortfolioNarrativeUsecase", () => {
         selectedSummaryIds: ["summary-1", "summary-2"],
         chatInput: "自己PRを生成してください",
         targetSection: "selfPr",
-        profile: {
-          displayName: "riku",
-          bio: "",
-          avatarUrl: "",
-          socialLinks: {},
-          careerStories: [],
-          skills: [],
-        },
         currentContent: {
           selfPr: "",
           strengths: "",

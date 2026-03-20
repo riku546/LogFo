@@ -126,7 +126,6 @@ export const generatePortfolioContentRequestSchema = z.object({
   selectedSummaryIds: z
     .array(z.string().min(1))
     .max(5, "サマリーは最大5件まで選択できます"),
-  profile: profileSettingsSchema,
   currentContent: portfolioGeneratedContentSchema.optional().default({
     selfPr: "",
     strengths: "",
