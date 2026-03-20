@@ -92,7 +92,6 @@
   - `chatInput: string`（必須）
   - `targetSection: "selfPr" | "strengths" | "learnings" | "futureVision"`（必須）
   - `selectedSummaryIds: string[]`（最大5件）
-  - `profile`
   - `currentContent`（再提案時の文脈参照用）
 - Validation:
   - `chatInput` は必須

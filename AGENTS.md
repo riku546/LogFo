@@ -10,28 +10,21 @@
 - ユーザーが明示していない破壊的操作は行わない。
 - 既存差分は勝手に巻き戻さない。
 
-## 最初に読むファイル
 
-- 作業開始時に必ず `Gemini.md` を確認する。
-- その後は、以下から必要最小限だけ読む。
 
 ### 共通ルール
+- `docs/rules/general/*.md`
 
-- `docs/rules/general/rules.md`
-- `docs/rules/general/naming.md`
-- `docs/rules/general/tsdoc.md`
-- `docs/rules/general/ubiquitous_language.md`
 
 ### フロントエンド関連タスク
 
-- `docs/rules/frontend/rules.md`
-- `docs/rules/frontend/architecture.md`
-- `docs/rules/frontend/design-system.md`
+- `docs/rules/frontend/*.md`
+
 
 ### バックエンド関連タスク
 
-- `docs/rules/backend/rules.md`
-- `docs/rules/backend/architecture.md`
+- `docs/rules/backend/*.md`
+
 
 ### 設計変更・ADR関連
 
@@ -49,21 +42,14 @@
 
 ### スキル
 
-- コミット依頼、`/commit`、コミットメッセージ作成: `.agents/skills/logfo-commit/SKILL.md`
-- PR説明作成、`/pr`: `.agents/skills/logfo-pr/SKILL.md`
-- コードレビュー、`/review`: `.agents/skills/logfo-review/SKILL.md`
-- 新規機能実装: `.agents/skills/logfo-new-feature/SKILL.md`
+- コミット依頼、`/logfo-commit`、コミットメッセージ作成: `.agents/skills/logfo-commit/SKILL.md`
+- PR説明作成、`/logfo-pr`: `.agents/skills/logfo-pr/SKILL.md`
+- コードレビュー、`/logfo-review`: `.agents/skills/logfo-review/SKILL.md`
+- 新規機能実装: `/logfo-new-feature`: `.agents/skills/logfo-new-feature/SKILL.md`
 - スキル検索や導入相談: `.agents/skills/find-skills/SKILL.md`
 - プロンプト、コマンド、スキル、LLM向けテンプレート設計: `.agents/skills/prompt-engineering/SKILL.md`
 - UI/UX設計、画面実装、デザインレビュー: `.agents/skills/ui-ux-pro-max/SKILL.md`
 
-### Claude Code 互換エイリアス
-
-- ユーザーが Claude Code 風のスラッシュコマンドを使った場合は、シェルコマンドとしてではなくワークフロー要求として解釈する。
-- `/commit` は `.agents/skills/logfo-commit/SKILL.md` を使う。
-- `/pr` は `.agents/skills/logfo-pr/SKILL.md` を使う。
-- `/review` は `.agents/skills/logfo-review/SKILL.md` を使う。
-- `/speckit.*` は移行完了まで `.claude/commands/speckit.*.md` を参照して対応する。
 
 ## 実装ルールの要点
 
@@ -101,3 +87,4 @@
 - まず結果と判断を簡潔に示し、その後に根拠を補足する。
 - レビュー依頼では、要約より先に問題点を重要度順で列挙する。
 - ユーザーが単に質問しているだけなら、不要なコード変更は行わない。
+- 必ず出力を日本語でしてください。

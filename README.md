@@ -1,13 +1,16 @@
 # LogFo (Log + Portfolio)とは
 
-
-
-LogFoは、日々のプログラミング、ソフトウェアに関する学習の軌跡（ログ）を自動で集約・可視化し、それを信頼できるポートフォリオに変換することで、学習者のモチベーション維持とキャリア目標の達成を支援するSassプロダクトです。
+LogFoは、ソフトウェアエンジニアやプログラマーの目標実現を支援するプロダクトです。
+目標とのギャップを可視化、日々の活動を記録、ポートフォリオを作成することで、目標実現を促進します。
 
 ## LogFoについてさらに知る。
-[こちら](https://drive.google.com/file/d/1fRftx85FWKH3AKDW2qt5cDb3_crcfA7F/view?usp=sharing)
+[こちら](https://docs.google.com/presentation/d/1V67kbPhYy5RCyWyhRVz4a-6lQ9KlxHO434VDt5KRf2M/edit?usp=sharing)
 
+## LogFoの使い方ガイド
+[こちら](https://logfo.riku62560.workers.dev/guide)
 
+# 開発オンボーディング
+- [オンボーディング資料](docs/onboarding.md)
 
 # 開発環境構築
 - [backend](backend/README.md)

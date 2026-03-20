@@ -90,7 +90,7 @@ export const IntegrationSyncPanel = () => {
       <div className="flex flex-col mb-4">
         <h3 className="text-xl font-semibold mb-2">外部サービス連携</h3>
         <p className="text-sm opacity-80">
-          GitHubやWakaTimeなどから活動データを同期し、ダッシュボードに反映させます。（※現在モック動作）
+          連携には時間が掛かる場合があるため、完了までしばらくお待ちください。
         </p>
       </div>
 

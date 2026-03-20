@@ -1,8 +1,5 @@
 import type { Summary } from "../../../core/domain/models/summary";
-import type {
-  PortfolioGeneratedSectionKey,
-  ProfileSettings,
-} from "../../../schema/portfolio";
+import type { PortfolioGeneratedSectionKey } from "../../../schema/portfolio";
 
 const sectionLabelMap: Record<PortfolioGeneratedSectionKey, string> = {
   selfPr: "自己PR",
@@ -38,7 +35,7 @@ export const buildPortfolioNarrativeSystemPrompt = (
   targetSection: PortfolioGeneratedSectionKey,
 ): string => {
   return `あなたは就活・転職向けの文章作成に強いキャリアライターです。
-ユーザーのプロフィール、選択サマリー、自由入力テキストを材料に、ポートフォリオ用の文章を作成してください。
+ユーザーが選択したサマリー、自由入力テキスト、既存の生成文章を材料に、ポートフォリオ用の文章を作成してください。
 
 # 方針
 - 文体はフォーマルかつ具体的にする
@@ -55,7 +52,6 @@ export const buildPortfolioNarrativeSystemPrompt = (
 /**
  * AI文章生成用のユーザープロンプトを構築します。
  *
- * @param profile - プロフィール情報
  * @param chatInput - 自由入力テキスト
  * @param targetSection - 生成対象セクション
  * @param selectedSummaries - 選択サマリー
@@ -63,45 +59,17 @@ export const buildPortfolioNarrativeSystemPrompt = (
  * @returns ユーザープロンプト
  */
 export const buildPortfolioNarrativeUserPrompt = ({
-  profile,
   chatInput,
   targetSection,
   selectedSummaries,
   currentContent,
 }: {
-  profile: ProfileSettings;
   chatInput: string;
   targetSection: PortfolioGeneratedSectionKey;
   selectedSummaries: Summary[];
   currentContent: Record<PortfolioGeneratedSectionKey, string>;
 }): string => {
-  const formattedCareerStories = (profile.careerStories ?? [])
-    .map((careerStory) => {
-      const period =
-        careerStory.periodFrom || careerStory.periodTo
-          ? `${careerStory.periodFrom || ""} - ${careerStory.periodTo || (careerStory.isCurrent ? "現在" : "")}`
-          : "期間未設定";
-      return `- ${careerStory.title || "役割未設定"} / ${careerStory.organization || "所属未設定"} / ${period}\n  ${careerStory.story || "説明なし"}`;
-    })
-    .join("\n");
-
-  const formattedSkills =
-    profile.skills && profile.skills.length > 0
-      ? profile.skills.join(", ")
-      : "スキル未設定";
-
-  return `# プロフィール
-表示名: ${profile.displayName}
-自己紹介:
-${profile.bio || "自己紹介未入力"}
-
-経歴:
-${formattedCareerStories || "経歴未設定"}
-
-スキル:
-${formattedSkills}
-
-# 自由入力テキスト
+  return `# 自由入力テキスト
 ${chatInput.trim() || "未入力"}
 
 # 生成対象

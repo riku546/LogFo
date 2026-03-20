@@ -261,7 +261,6 @@ export default function PortfolioBuilderPage() {
           chatInput,
           targetSection,
           selectedSummaryIds: settings.generation.selectedSummaryIds,
-          profile: settings.profile,
           currentContent: settings.generatedContent,
         },
         {
@@ -294,7 +293,6 @@ export default function PortfolioBuilderPage() {
     settings.generation.targetSection,
     settings.generation.selectedSummaryIds,
     settings.generatedContent,
-    settings.profile,
     appendAssistantChunk,
     appendRequestMessages,
     completeAssistantMessage,
