@@ -55,21 +55,24 @@ docs/
 
 特に覚えておくと便利なもの:
 
+- `/logfo-issue-to-pr`: Issue 起点で仕様確認から PR 作成まで進める統合フロー
 - `/logfo-review`: 差分レビュー
 - `/logfo-commit`: コミットメッセージ作成やコミット補助
-- `/logfo-pr`: PR タイトル案と PR Description 作成
+- `/logfo-pr`: PR タイトル生成、PR Description 生成、PR 作成
 - `/logfo-new-feature`: 新規機能実装のワークフロー
 - `/logfo-fix-feature`: 既存機能修正のワークフロー
 
 ## タスクアサインから PR までの流れ
 
-1. タスクの内容から作るものを解釈する
-2. 仕様書を作成する（`docs/specs/` を参照する）
-3. 新規機能なら `/logfo-new-feature`、機能修正なら `/logfo-fix-feature` を使って実装する
-4. 実装後に `/logfo-review` を使ってレビューする
-5. `/logfo-commit` でコミットする
-6. Pull Request を出す。description は `/logfo-pr` で生成する
-7. 必要に応じて Copilot でもレビューする(オプション)
+1. 人間が Issue に目的、背景、完了条件を書く
+2. `/logfo-issue-to-pr` に Issue 番号を渡す
+3. AI が仕様不足を洗い出し、人間と仕様確認を行う
+4. 新規機能なら `/logfo-new-feature`、機能修正なら `/logfo-fix-feature` を使って実装する
+5. 実装後に `/logfo-review` を使って AI レビューする
+6. `/logfo-commit` でコミットする
+7. `/logfo-pr` で Pull Request を作成する
+8. 人間は PR 上で要件を満たしているかを最終確認する
+9. 必要に応じて Copilot でもレビューする(オプション)
 
 ## 迷ったときの最短ルート
 

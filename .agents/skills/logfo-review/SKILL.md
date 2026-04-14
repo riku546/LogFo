@@ -6,6 +6,7 @@ description: Use this skill when the user asks for a code review, diff review, P
 # LogFo Review
 
 このスキルは、ベースブランチとの差分レビューを行う時に使います。
+Issue 起点の標準フローでは、PR 作成前の必須 AI レビュー工程として扱います。
 
 ## 事前確認
 

@@ -6,6 +6,7 @@ description: Use this skill when the user asks to fix or improve an existing fea
 # LogFo Fix Feature
 
 このスキルは、既存機能の修正を仕様駆動で進める時に使います。
+Issue 起点の標準フローでは `logfo-issue-to-pr` から呼び出される下位スキルとして扱います。
 
 ## 事前確認
 
