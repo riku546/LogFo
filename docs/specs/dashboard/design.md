@@ -18,6 +18,7 @@
   手持でデータを同期するためのコントロールパネル。
   - 各連携プラットフォーム（GitHub, WakaTime等）ごとの**「同期する」**ボタン。
   - APIを叩きに行き、スピナー表示をして正常終了を待機する。
+  - なお、**Zenn / AtCoder の公開データ同期は OAuth 同期と性質が異なるため別設計**とし、詳細は `docs/specs/public_activity_sync/design.md` を参照する。
 
 ### 1.2. 状態管理 (State Management)
 
@@ -40,6 +41,8 @@
   2.  対象の外部API（GitHub GraphQL API や WakaTime API 等）へリクエストを投げ、直近のアクティビティを取得。
   3.  Cloudflare Workersの30秒制限以内に処理を完了させるため、複雑な加工はせず `external_activities` テーブルへ1日分のサマリーもしくは生JSONデータを挿入・更新(Upsert)する。
   4.  成功レスポンスを返す。
+
+※ Zenn / AtCoder の公開データ同期は、負荷制御と非同期通知を重視して `POST /dashboard/public-sync/:provider` 系の別 API と Queue を採用する。詳細は `docs/specs/public_activity_sync/design.md` を参照する。
 
 #### ② ダッシュボードデータ提供API (GET APIs)
 
