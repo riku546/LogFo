@@ -6,6 +6,7 @@ description: Use this skill when the user asks to create a commit, propose a com
 # LogFo Commit
 
 このスキルは、LogFo リポジトリでコミットを作成する時に使います。
+Issue 起点の標準フローでは `logfo-issue-to-pr` から呼び出される下位スキルとして扱います。
 
 ## 事前確認
 

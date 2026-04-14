@@ -1,5 +1,5 @@
 ---
-description: pr description作成
+description: pull request作成
 ---
 
 ## 使い方
@@ -18,8 +18,9 @@ description: pr description作成
 ## 実行手順のまとめ
 
 1. 現在のブランチと指定されたベースブランチとの差分を確認
-2. 変更内容を分析し、PRテンプレートに従ってdescriptionを生成
-3. 生成したdescriptionを提示
+2. 変更内容を分析し、PR テンプレートに従ってタイトルと本文を生成
+3. `gh pr create` で Pull Request を作成
+4. 作成した PR URL を提示
 
 以下の手順を実行してください：
 
@@ -43,27 +44,38 @@ git diff BASE_BRANCH...HEAD --stat
 git diff BASE_BRANCH...HEAD
 ```
 
-## 2. PR descriptionの生成
+## 2. PR 本文の生成と PR 作成
 
-`.github/pull_request_template.md` のテンプレートに従って、以下の内容を含むPR descriptionを生成してください：
+`.github/pull_request_template.md` のテンプレートに従って、以下の内容を含む PR 本文を生成してください：
 
 ### 注意事項
 
-- PRのタイトルとして適切な簡潔な説明も提案してください
+- PR のタイトルとして適切な簡潔な説明を生成してください
 - 変更内容は、差分の内容から重要な変更点を抽出して記述してください
 - コミットメッセージも参考にして、変更の意図を理解してください
-- **説明は日本語で、Markdown形式で記述してください**
+- **説明は日本語で、Markdown 形式で記述してください**
 - 軽微なファイル変更（package-lock.json、設定ファイルの自動生成など）は省略して構いません
+- `gh auth status` が失敗した場合は原因を報告して停止してください
+- 未コミット変更がある場合は PR 作成前に停止してください
 
-## 3. 出力形式
+## 3. PR 作成
 
-以下の形式でPR descriptionを出力してください：
+- `git status --short` で未コミット変更がないことを確認してください
+- `git branch --show-current` で現在のブランチを確認してください
+- 必要なら現在のブランチを push してください
+- `gh pr create` を使って Pull Request を作成してください
+
+## 4. 出力形式
+
+以下の形式で結果を出力してください：
 
 ```markdown
-## PRタイトル案
-提案するタイトル
+## PRタイトル
+作成したタイトル
 
-## PR Description
+## PR Description 要約
+作成した本文の要約
 
-（ここに生成したdescriptionの全文を記載）
+## PR URL
+作成された Pull Request の URL
 ```

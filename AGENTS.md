@@ -42,10 +42,12 @@
 
 ### スキル
 
+- Issue から仕様確認、実装、コミット、PR 作成まで進める: `.agents/skills/logfo-issue-to-pr/SKILL.md`
 - コミット依頼、`/logfo-commit`、コミットメッセージ作成: `.agents/skills/logfo-commit/SKILL.md`
-- PR説明作成、`/logfo-pr`: `.agents/skills/logfo-pr/SKILL.md`
+- PR 作成、`/logfo-pr`: `.agents/skills/logfo-pr/SKILL.md`
 - コードレビュー、`/logfo-review`: `.agents/skills/logfo-review/SKILL.md`
 - 新規機能実装: `/logfo-new-feature`: `.agents/skills/logfo-new-feature/SKILL.md`
+- 既存機能修正: `/logfo-fix-feature`: `.agents/skills/logfo-fix-feature/SKILL.md`
 - スキル検索や導入相談: `.agents/skills/find-skills/SKILL.md`
 - プロンプト、コマンド、スキル、LLM向けテンプレート設計: `.agents/skills/prompt-engineering/SKILL.md`
 - UI/UX設計、画面実装、デザインレビュー: `.agents/skills/ui-ux-pro-max/SKILL.md`

@@ -6,6 +6,7 @@ description: Use this skill when the user asks to build a new feature, implement
 # LogFo New Feature
 
 このスキルは、新規機能の仕様整理から実装までを進める時に使います。
+Issue 起点の標準フローでは `logfo-issue-to-pr` から呼び出される下位スキルとして扱います。
 
 ## 事前確認
 
