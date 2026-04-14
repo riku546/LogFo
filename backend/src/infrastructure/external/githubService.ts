@@ -1,12 +1,11 @@
 import { IntegrationUnauthorizedError } from "../../core/application/errors/integrationError";
+import type {
+  GithubContributionDay,
+  GithubContributionService,
+} from "../../core/application/interfaces/githubContributionService";
 import { readJson } from "../../lib/readJson";
 
-export interface GithubContributionDay {
-  date: string;
-  contributionCount: number;
-}
-
-export class GithubService {
+export class GithubService implements GithubContributionService {
   /**
    * GitHub GraphQL APIを使用して、指定期間のコントリビューション（草）データを取得する
    */

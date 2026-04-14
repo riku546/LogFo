@@ -16,8 +16,8 @@ import { PublishSettingsModal } from "@/features/portfolio/components/PublishSet
 import { PublishSettingsPanel } from "@/features/portfolio/components/PublishSettingsPanel";
 import { SummarySelectionModal } from "@/features/portfolio/components/SummarySelectionModal";
 import { usePortfolioBuilder } from "@/features/portfolio/hooks/usePortfolioBuilder";
-import type { SummaryItem } from "@/features/summary/api/summaryApi";
 import { fetchMySummaries } from "@/features/summary/api/summaryApi";
+import type { SummaryItem } from "@/types/summary";
 
 /**
  * ポートフォリオビルダーページ

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/Header";
-import { fetchAuthSession } from "@/features/auth/api/authApi";
+import { fetchAuthSession } from "@/lib/auth";
 
 const pushMock = vi.fn();
 const pathnameState = {
@@ -13,14 +13,14 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
-vi.mock("@/app/theme-provider", () => ({
+vi.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({
     theme: "light",
     toggleTheme: vi.fn(),
   }),
 }));
 
-vi.mock("@/features/auth/api/authApi", () => ({
+vi.mock("@/lib/auth", () => ({
   fetchAuthSession: vi.fn(),
 }));
 

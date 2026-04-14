@@ -1,12 +1,11 @@
 import { IntegrationUnauthorizedError } from "../../core/application/errors/integrationError";
+import type {
+  WakatimeSummary,
+  WakatimeSummaryService,
+} from "../../core/application/interfaces/wakatimeSummaryService";
 import { readJson } from "../../lib/readJson";
 
-export interface WakatimeSummary {
-  date: string;
-  totalSeconds: number;
-}
-
-export class WakatimeService {
+export class WakatimeService implements WakatimeSummaryService {
   /**
    * WakaTime Summaries APIを使用して、指定期間の活動データを取得する
    */

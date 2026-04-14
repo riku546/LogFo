@@ -4,7 +4,7 @@ import { MenuIcon, MoonIcon, SunIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useTheme } from "@/app/theme-provider";
+import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { fetchAuthSession } from "@/features/auth/api/authApi";
+import { fetchAuthSession } from "@/lib/auth";
 
 const NAVIGATION_ITEMS = [
   { href: "/", label: "ホーム" },

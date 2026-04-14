@@ -69,3 +69,22 @@ src/
   - LLMで要約・作成済みの自己PRや活動サマリーのテキスト情報。
 - **`portfolios` テーブル**
   - サマリーや表示したいウィジェット（外部データ）の設定、パブリックリンクとなるSlug文字列。
+
+## 6. 依存関係ルールの機械的検証
+
+バックエンドでは `backend/dependency-cruiser.cjs` により、以下の依存関係を `dependency-cruiser` で検証します。
+
+- `core/domain` は `core/application` に依存しない
+- `core` は `infrastructure` / `presentation` / `lib` / `schema` に依存しない
+- `infrastructure` は `presentation` に依存しない
+
+理由:
+
+- オニオンアーキテクチャの依存方向を、レビュー頼みではなく CI で強制するため
+- usecase / domain を外側の実装詳細から隔離し、仕様駆動開発と単体テストを保ちやすくするため
+- schema や外部サービス実装への直接依存を避け、core にはユースケースに必要な型とインターフェースだけを置くため
+
+ローカル確認コマンド:
+
+- `pnpm --filter backend depcruise`
+- `pnpm test:dependency-rules`

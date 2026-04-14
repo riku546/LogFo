@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchAuthSession } from "@/features/auth/api/authApi";
+import { fetchAuthSession } from "@/lib/auth";
 
 const { getMock } = vi.hoisted(() => ({
   getMock: vi.fn(),

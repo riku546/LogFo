@@ -10,6 +10,7 @@
     "format": "biome format --write",
     "biome:fix": "biome check --write",
     "biome:check": "biome check",
+    "depcruise": "depcruise --config dependency-cruiser.cjs src --output-type err",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"

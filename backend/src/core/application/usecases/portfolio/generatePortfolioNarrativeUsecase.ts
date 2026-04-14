@@ -1,7 +1,7 @@
 import type {
   PortfolioGeneratedContent,
   PortfolioGeneratedSectionKey,
-} from "../../../../schema/portfolio";
+} from "../../../domain/models/portfolioSettings";
 import type { Summary } from "../../../domain/models/summary";
 import type { SummaryRepository } from "../../interfaces/summaryRepository";
 

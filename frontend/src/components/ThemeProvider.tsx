@@ -15,6 +15,13 @@ const isTheme = (value: string | null): value is Theme => {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/**
+ * アプリ全体で利用するテーマ状態を提供する。
+ *
+ * @param props - 子要素を含むプロパティ
+ * @param props.children - テーマコンテキスト配下で描画する要素
+ * @returns テーマコンテキストを提供するラッパー
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
@@ -43,6 +50,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * 現在のテーマ状態と切り替え関数を取得する。
+ *
+ * @returns テーマ状態と切り替え関数
+ * @throws {Error} ThemeProvider 配下で呼ばれていない場合
+ */
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {

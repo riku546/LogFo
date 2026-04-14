@@ -46,3 +46,23 @@ src/
 
 - Cloudflare Workers側のAPIが制限時間内にレスポンスを返せなかったり（外部APIの遅延等）、OpenRouterの呼び出しでエラーが発生した場合に備え、`react-toastify` や `sonner` を利用してユーザーフレンドリーなエラー通知（トースト）を表示します。
 - LLM実行中の離脱を防ぐため、ストリーミング中は「ページ離脱時の警告ダイアログ (beforeunload)」を設定します。
+
+## 4. 依存関係ルールの機械的検証
+
+フロントエンドでは `frontend/dependency-cruiser.cjs` により、以下の依存関係を `dependency-cruiser` で検証します。
+
+- `src/components` は `src/features` と `src/app` に依存しない
+- `src/lib` は `src/features` と `src/app` に依存しない
+- `src/features` は `src/app` に依存しない
+- 各 feature は他 feature に直接依存しない
+
+理由:
+
+- `app` は Next.js の配線層に限定し、ビジネスロジックや shared UI から逆流しないようにするため
+- `components` と `lib` を shared layer として保ち、再利用性とテスト容易性を落とさないため
+- feature 間の密結合を防ぎ、共通化が必要な要素を `src/components` / `src/lib` / `src/types` に切り出す判断を促すため
+
+ローカル確認コマンド:
+
+- `pnpm --filter frontend depcruise`
+- `pnpm test:dependency-rules`

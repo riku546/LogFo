@@ -1,5 +1,5 @@
-import type { SaveRoadmapRequest } from "../../../../schema/roadmap";
 import type { RoadmapRepository } from "../../interfaces/roadmapRepository";
+import type { RoadmapMutationInput } from "./roadmapMutationInput";
 
 /**
  * ロードマップ保存のビジネスロジックを実行するユースケース
@@ -15,7 +15,7 @@ export class SaveRoadmapUsecase {
    * @param input - 保存するロードマップデータ
    * @returns 作成されたロードマップのID
    */
-  async execute(userId: string, input: SaveRoadmapRequest): Promise<string> {
+  async execute(userId: string, input: RoadmapMutationInput): Promise<string> {
     const roadmapId = await this.roadmapRepository.create({
       userId,
       currentState: input.currentState,
