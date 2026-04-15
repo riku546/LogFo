@@ -13,7 +13,7 @@ export default defineConfig(async () => {
   return {
     test: {
       coverage: {
-        provider: "v8",
+        provider: "istanbul",
         reporter: ["text", "html", "json-summary"],
         include: ["src/**/*.ts"],
         exclude: [

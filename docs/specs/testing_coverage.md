@@ -15,12 +15,12 @@
 - `backend`
   - コマンド: `pnpm --filter backend test:coverage`
   - 対象: `src/**/*.ts`
-  - 重視する層: Unit Test で検証する UseCase / Domain ロジック
+  - 重視する層: Unit Test の UseCase / Domain と Integration Test の Presentation / Route
 
 ## CI での扱い
 
 - `frontend-check.yml` でフロントエンドのカバレッジを毎回計測する。
-- `backend-check.yml` でバックエンドのカバレッジを毎回計測する。
+- `backend-check.yml` でバックエンドの unit / integration を含むカバレッジを毎回計測する。
 - `coverage-summary.json` を使って GitHub Actions の Step Summary に主要指標を出力する。
 - HTML レポートは Artifact として保存し、PR ごとに参照できるようにする。
 
