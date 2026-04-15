@@ -49,7 +49,7 @@ export default function RootLayout({
           <Header />
           <main className="pt-16">{children}</main>
           <Toaster
-            position="top-right"
+            position="bottom-right"
             richColors
             toastOptions={{
               duration: 3000,
