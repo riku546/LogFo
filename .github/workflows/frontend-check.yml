@@ -53,3 +53,17 @@ jobs:
 
       - name: Run frontend tests
         run: pnpm test -- --run
+
+      - name: Run frontend coverage
+        run: pnpm test:coverage
+
+      - name: Summarize frontend coverage
+        run: |
+          node -e 'const fs=require("node:fs"); const path="coverage/coverage-summary.json"; const summary=JSON.parse(fs.readFileSync(path,"utf8")).total; const lines=["## Frontend Coverage","", "| Metric | Percent | Covered / Total |", "| --- | ---: | ---: |"]; for (const metric of ["lines","statements","functions","branches"]) { const item=summary[metric]; lines.push(`| ${metric} | ${item.pct}% | ${item.covered} / ${item.total} |`); } fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);'
+
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage
+          if-no-files-found: error
