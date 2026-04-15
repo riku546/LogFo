@@ -1,6 +1,6 @@
 "use client";
 
-import type { SummaryItem } from "../api/summaryApi";
+import type { SummaryItem } from "@/types/summary";
 
 export interface SummaryListItemProps {
   summary: SummaryItem;

@@ -1,4 +1,4 @@
-import type { PortfolioSettings } from "../../../schema/portfolio";
+import type { PortfolioSettings } from "./portfolioSettings";
 
 /**
  * ポートフォリオエンティティの型定義

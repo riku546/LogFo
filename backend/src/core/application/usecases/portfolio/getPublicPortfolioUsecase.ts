@@ -1,4 +1,4 @@
-import type { PortfolioSettings } from "../../../../schema/portfolio";
+import type { PortfolioSettings } from "../../../domain/models/portfolioSettings";
 import type { PortfolioRepository } from "../../interfaces/portfolioRepository";
 
 /**

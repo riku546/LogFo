@@ -1,20 +1,20 @@
+import type { ExternalActivityRepository } from "../../interfaces/externalActivityRepository";
 import type {
   GithubContributionDay,
-  GithubService,
-} from "../../../../infrastructure/external/githubService";
-import type {
-  WakatimeService,
-  WakatimeSummary,
-} from "../../../../infrastructure/external/wakatimeService";
-import type { ExternalActivityRepository } from "../../interfaces/externalActivityRepository";
+  GithubContributionService,
+} from "../../interfaces/githubContributionService";
 import type { UserIntegrationRepository } from "../../interfaces/userIntegrationRepository";
+import type {
+  WakatimeSummary,
+  WakatimeSummaryService,
+} from "../../interfaces/wakatimeSummaryService";
 
 export class SyncExternalDataUsecase {
   constructor(
     private readonly externalActivityRepo: ExternalActivityRepository,
     private readonly userIntegrationRepo: UserIntegrationRepository,
-    private readonly githubService: GithubService,
-    private readonly wakatimeService: WakatimeService,
+    private readonly githubService: GithubContributionService,
+    private readonly wakatimeService: WakatimeSummaryService,
   ) {}
 
   async execute(userId: string, provider: string): Promise<number> {

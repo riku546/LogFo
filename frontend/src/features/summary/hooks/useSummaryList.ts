@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { SummaryItem } from "../api/summaryApi";
+import type { SummaryItem } from "@/types/summary";
 import { deleteSummary, fetchSummariesByMilestone } from "../api/summaryApi";
 
 /**

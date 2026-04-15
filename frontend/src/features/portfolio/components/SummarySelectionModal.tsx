@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { SummaryItem } from "@/features/summary/api/summaryApi";
+import type { SummaryItem } from "@/types/summary";
 
 export interface SummarySelectionModalProps {
   isOpen: boolean;

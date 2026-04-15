@@ -1,9 +1,9 @@
-import type { UpdateRoadmapRequest } from "../../../../schema/roadmap";
 import type { RoadmapRepository } from "../../interfaces/roadmapRepository";
 import {
   RoadmapAccessDeniedError,
   RoadmapNotFoundError,
 } from "./getRoadmapUsecase";
+import type { RoadmapMutationInput } from "./roadmapMutationInput";
 
 /**
  * ロードマップ更新のビジネスロジックを実行するユースケース
@@ -24,7 +24,7 @@ export class UpdateRoadmapUsecase {
   async execute(
     roadmapId: string,
     userId: string,
-    input: UpdateRoadmapRequest,
+    input: RoadmapMutationInput,
   ): Promise<void> {
     const isOwner = await this.roadmapRepository.isOwner(roadmapId, userId);
     if (!isOwner) {
@@ -44,12 +44,12 @@ export class UpdateRoadmapUsecase {
       milestones: input.milestones.map((milestone) => ({
         title: milestone.title,
         description: milestone.description,
-        status: milestone.status,
+        status: milestone.status ?? "TODO",
         orderIndex: milestone.orderIndex,
         tasks: milestone.tasks.map((task) => ({
           title: task.title,
           estimatedHours: task.estimatedHours,
-          status: task.status,
+          status: task.status ?? "TODO",
           orderIndex: task.orderIndex,
         })),
       })),

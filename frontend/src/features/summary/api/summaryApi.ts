@@ -1,4 +1,5 @@
 import { client } from "@/lib/client";
+import type { SummaryItem } from "@/types/summary";
 
 /**
  * サマリー機能に関するAPI通信ユーティリティ
@@ -9,18 +10,6 @@ import { client } from "@/lib/client";
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-
-// ===== 型定義 =====
-
-export interface SummaryItem {
-  id: string;
-  userId: string;
-  milestoneId: string;
-  title: string | null;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface SaveSummaryPayload {
   milestoneId: string;

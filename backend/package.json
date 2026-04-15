@@ -7,6 +7,7 @@
     "format": "biome format --write",
     "biome:fix": "biome check --write",
     "biome:check": "biome check",
+    "depcruise": "depcruise --config dependency-cruiser.cjs src --output-type err",
     "generate-types": "wrangler types",
     "typecheck": "pnpm generate-types && tsc --noEmit",
     "test:unit": "vitest test/unit",

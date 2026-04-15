@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ExternalActivityRepository } from "../../../src/core/application/interfaces/externalActivityRepository";
+import type {
+  GithubContributionDay,
+  GithubContributionService,
+} from "../../../src/core/application/interfaces/githubContributionService";
 import type { UserIntegrationRepository } from "../../../src/core/application/interfaces/userIntegrationRepository";
+import type {
+  WakatimeSummary,
+  WakatimeSummaryService,
+} from "../../../src/core/application/interfaces/wakatimeSummaryService";
 import { SyncExternalDataUsecase } from "../../../src/core/application/usecases/dashboard/syncExternalDataUsecase";
-import type { GithubService } from "../../../src/infrastructure/external/githubService";
-import type { WakatimeService } from "../../../src/infrastructure/external/wakatimeService";
 
 const createExternalActivityRepository = () =>
   ({
@@ -23,13 +29,13 @@ const createUserIntegrationRepository = () =>
 
 const createGithubService = () =>
   ({
-    getContributions: vi.fn<GithubService["getContributions"]>(),
-  }) satisfies Pick<GithubService, "getContributions">;
+    getContributions: vi.fn<GithubContributionService["getContributions"]>(),
+  }) satisfies Pick<GithubContributionService, "getContributions">;
 
 const createWakatimeService = () =>
   ({
-    getSummaries: vi.fn<WakatimeService["getSummaries"]>(),
-  }) satisfies Pick<WakatimeService, "getSummaries">;
+    getSummaries: vi.fn<WakatimeSummaryService["getSummaries"]>(),
+  }) satisfies Pick<WakatimeSummaryService, "getSummaries">;
 
 describe("SyncExternalDataUsecase", () => {
   it("githubプロバイダーを同期できる", async () => {
@@ -49,13 +55,13 @@ describe("SyncExternalDataUsecase", () => {
     });
     githubService.getContributions.mockResolvedValue([
       { date: "2026-03-12", contributionCount: 3 },
-    ]);
+    ] satisfies GithubContributionDay[]);
 
     const usecase = new SyncExternalDataUsecase(
       externalActivityRepository,
       userIntegrationRepository,
-      githubService as GithubService,
-      wakatimeService as WakatimeService,
+      githubService as GithubContributionService,
+      wakatimeService as WakatimeSummaryService,
     );
 
     const count = await usecase.execute("user-1", "github");
@@ -82,13 +88,13 @@ describe("SyncExternalDataUsecase", () => {
     });
     wakatimeService.getSummaries.mockResolvedValue([
       { date: "2026-03-12", totalSeconds: 3600 },
-    ]);
+    ] satisfies WakatimeSummary[]);
 
     const usecase = new SyncExternalDataUsecase(
       externalActivityRepository,
       userIntegrationRepository,
-      githubService as GithubService,
-      wakatimeService as WakatimeService,
+      githubService as GithubContributionService,
+      wakatimeService as WakatimeSummaryService,
     );
 
     const count = await usecase.execute("user-1", "wakatime");
@@ -102,8 +108,8 @@ describe("SyncExternalDataUsecase", () => {
     const usecase = new SyncExternalDataUsecase(
       createExternalActivityRepository(),
       createUserIntegrationRepository(),
-      createGithubService() as GithubService,
-      createWakatimeService() as WakatimeService,
+      createGithubService() as GithubContributionService,
+      createWakatimeService() as WakatimeSummaryService,
     );
 
     await expect(usecase.execute("user-1", "github")).rejects.toThrow(
@@ -126,8 +132,8 @@ describe("SyncExternalDataUsecase", () => {
     const usecase = new SyncExternalDataUsecase(
       createExternalActivityRepository(),
       userIntegrationRepository,
-      createGithubService() as GithubService,
-      createWakatimeService() as WakatimeService,
+      createGithubService() as GithubContributionService,
+      createWakatimeService() as WakatimeSummaryService,
     );
 
     await expect(usecase.execute("user-1", "zenn")).rejects.toThrow(

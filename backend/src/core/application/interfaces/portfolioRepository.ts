@@ -1,5 +1,5 @@
-import type { PortfolioSettings } from "../../../schema/portfolio";
 import type { Portfolio } from "../../domain/models/portfolio";
+import type { PortfolioSettings } from "../../domain/models/portfolioSettings";
 
 /**
  * ポートフォリオ作成・更新時の入力データ
