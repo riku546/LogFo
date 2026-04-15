@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
-import { Toaster } from "sonner";
 import "./globals.css";
+import { AppToaster } from "@/components/AppToaster";
 import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -48,13 +48,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Header />
           <main className="pt-16">{children}</main>
-          <Toaster
-            position="top-right"
-            richColors
-            toastOptions={{
-              duration: 3000,
-            }}
-          />
+          <AppToaster />
         </ThemeProvider>
       </body>
     </html>
