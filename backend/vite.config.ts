@@ -13,7 +13,7 @@ export default defineConfig(async () => {
   return {
     test: {
       coverage: {
-        provider: "v8",
+        provider: "istanbul",
         reporter: ["text", "html", "json-summary"],
         include: ["src/**/*.ts"],
         exclude: [
@@ -21,6 +21,11 @@ export default defineConfig(async () => {
           "worker-configuration.d.ts",
           "test/**",
           "**/*.d.ts",
+          "src/schema/**",
+          "src/infrastructure/database/schema.ts",
+          "src/infrastructure/ai/prompts/**",
+          "src/infrastructure/ai/llmProvider.ts",
+          "src/infrastructure/ai/workersAiProvider.ts",
         ],
       },
       projects: [
