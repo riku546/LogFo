@@ -21,6 +21,11 @@ export default defineConfig(async () => {
           "worker-configuration.d.ts",
           "test/**",
           "**/*.d.ts",
+          "src/schema/**",
+          "src/infrastructure/database/schema.ts",
+          "src/infrastructure/ai/prompts/**",
+          "src/infrastructure/ai/llmProvider.ts",
+          "src/infrastructure/ai/workersAiProvider.ts",
         ],
       },
       projects: [

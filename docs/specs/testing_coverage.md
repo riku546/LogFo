@@ -16,6 +16,7 @@
   - コマンド: `pnpm --filter backend test:coverage`
   - 対象: `src/**/*.ts`
   - 重視する層: Unit Test の UseCase / Domain と Integration Test の Presentation / Route
+  - 除外方針: `src/schema/**` と、宣言的な DB schema / AI provider / prompt 定義などの薄いアダプタは coverage 集計から除外する
 
 ## CI での扱い
 
