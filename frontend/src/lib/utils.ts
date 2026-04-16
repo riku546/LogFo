@@ -33,6 +33,18 @@ export function formatDisplayDate(
         ? Number(dateInput)
         : null;
 
+  if (typeof dateInput === "string") {
+    const trimmedDateInput = dateInput.trim();
+    const matchedCalendarDate = trimmedDateInput.match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?)?$/,
+    );
+
+    if (matchedCalendarDate) {
+      const [, year, month, day] = matchedCalendarDate;
+      return `${year}/${Number(month)}/${Number(day)}`;
+    }
+  }
+
   const parsedDate =
     normalizedTimestamp === null
       ? new Date(dateInput)
