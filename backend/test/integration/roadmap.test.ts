@@ -167,11 +167,14 @@ describe("Roadmap API Integration Test", () => {
           id: string;
           goalState: string;
           currentState: string;
+          createdAt: string;
         }>;
       } = await response.json();
       expect(body.roadmaps).toBeDefined();
       expect(Array.isArray(body.roadmaps)).toBe(true);
       expect(body.roadmaps.length).toBeGreaterThanOrEqual(1);
+      expect(body.roadmaps[0].createdAt).toBeTruthy();
+      expect(body.roadmaps[0].createdAt).not.toBe("1970-01-01T00:00:00.000Z");
     });
   });
   describe("ロードマップ詳細取得 (GET /api/roadmap/:id)", () => {
@@ -231,11 +234,14 @@ describe("Roadmap API Integration Test", () => {
           currentState: string;
           goalState: string;
           summary: string;
+          createdAt: string;
           milestones: Array<{
             title: string;
+            createdAt: string;
             tasks: Array<{
               title: string;
               estimatedHours: number;
+              createdAt: string;
             }>;
           }>;
         };
@@ -243,9 +249,12 @@ describe("Roadmap API Integration Test", () => {
       expect(body.roadmap).toBeDefined();
       expect(body.roadmap.id).toBe(roadmapId);
       expect(body.roadmap.goalState).toBe("フルスタックエンジニア");
+      expect(body.roadmap.createdAt).toBeTruthy();
       expect(body.roadmap.milestones).toHaveLength(1);
       expect(body.roadmap.milestones[0].title).toBe("フロントエンド");
+      expect(body.roadmap.milestones[0].createdAt).toBeTruthy();
       expect(body.roadmap.milestones[0].tasks).toHaveLength(1);
+      expect(body.roadmap.milestones[0].tasks[0].createdAt).toBeTruthy();
     });
     it("存在しないIDの場合は404が返る", async () => {
       const token = await getAuthToken(
