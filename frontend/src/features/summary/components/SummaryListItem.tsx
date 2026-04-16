@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/utils";
 import type { SummaryItem } from "@/types/summary";
 
 export interface SummaryListItemProps {
@@ -41,7 +42,7 @@ export const SummaryListItem = ({
               <path d="M8 2v4" />
               <path d="M16 2v4" />
             </svg>
-            {new Date(summary.createdAt).toLocaleDateString("ja-JP")}
+            {formatDisplayDate(summary.createdAt)}
           </div>
         </div>
 

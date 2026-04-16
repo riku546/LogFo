@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRoadmapList } from "@/features/roadmap/hooks/useRoadmapList";
+import { formatDisplayDate } from "@/lib/utils";
 
 const CreateRoadmapMenu = ({ isPrimary = false }: { isPrimary?: boolean }) => (
   <details className="relative">
@@ -176,8 +177,7 @@ export default function RoadmapListPage() {
                     <path d="M8 2v4" />
                     <path d="M16 2v4" />
                   </svg>
-                  作成日:{" "}
-                  {new Date(roadmap.createdAt).toLocaleDateString("ja-JP")}
+                  作成日: {formatDisplayDate(roadmap.createdAt)}
                 </div>
               </Link>
             ))}
