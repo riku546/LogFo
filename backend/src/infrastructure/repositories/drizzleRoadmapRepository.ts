@@ -48,6 +48,61 @@ interface RawTaskRow {
 }
 
 /**
+ * Unix秒/ミリ秒タイムスタンプを Date に変換します。
+ *
+ * @param timestampValue - 数値タイムスタンプ
+ * @returns 変換後の Date
+ */
+const buildDateFromTimestampValue = (timestampValue: number): Date =>
+  new Date(
+    timestampValue < 1_000_000_000_000 ? timestampValue * 1000 : timestampValue,
+  );
+
+/**
+ * 数値文字列タイムスタンプを Date に変換します。
+ *
+ * @param timestampText - 数値形式の時刻文字列
+ * @returns 変換後の Date
+ */
+const parseNumericTimestampText = (timestampText: string): Date =>
+  buildDateFromTimestampValue(Number(timestampText));
+
+/**
+ * SQLite の日時文字列を Date に変換します。
+ *
+ * @param timestampText - `YYYY-MM-DD HH:mm:ss` または `YYYY-MM-DD`
+ * @returns 変換後の Date、該当しない場合は `null`
+ */
+const parseSqliteTimestampText = (timestampText: string): Date | null => {
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timestampText)) {
+    return new Date(timestampText.replace(" ", "T").concat("Z"));
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(timestampText)) {
+    return new Date(`${timestampText}T00:00:00Z`);
+  }
+
+  return null;
+};
+
+/**
+ * 文字列形式の時刻値を Date に変換します。
+ *
+ * @param timestampValue - DB から取得した文字列時刻
+ * @returns 変換後の Date
+ */
+const parseStringTimestampValue = (timestampValue: string): Date => {
+  const trimmedTimestampValue = timestampValue.trim();
+
+  if (/^\d+$/.test(trimmedTimestampValue)) {
+    return parseNumericTimestampText(trimmedTimestampValue);
+  }
+
+  const sqliteTimestamp = parseSqliteTimestampText(trimmedTimestampValue);
+  return sqliteTimestamp ?? new Date(trimmedTimestampValue);
+};
+
+/**
  * D1 から取得した時刻値を Date に正規化します。
  * 既存データの SQLite 文字列形式と、今後入りうる Unix タイムスタンプの両方を扱います。
  *
@@ -62,34 +117,11 @@ const normalizeDatabaseTimestamp = (
   }
 
   if (typeof timestampValue === "number") {
-    return new Date(
-      timestampValue < 1_000_000_000_000
-        ? timestampValue * 1000
-        : timestampValue,
-    );
+    return buildDateFromTimestampValue(timestampValue);
   }
 
   if (typeof timestampValue === "string") {
-    const trimmedTimestampValue = timestampValue.trim();
-
-    if (/^\d+$/.test(trimmedTimestampValue)) {
-      const numericTimestamp = Number(trimmedTimestampValue);
-      return new Date(
-        numericTimestamp < 1_000_000_000_000
-          ? numericTimestamp * 1000
-          : numericTimestamp,
-      );
-    }
-
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(trimmedTimestampValue)) {
-      return new Date(trimmedTimestampValue.replace(" ", "T").concat("Z"));
-    }
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedTimestampValue)) {
-      return new Date(`${trimmedTimestampValue}T00:00:00Z`);
-    }
-
-    return new Date(trimmedTimestampValue);
+    return parseStringTimestampValue(timestampValue);
   }
 
   return new Date(0);
