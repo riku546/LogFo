@@ -14,6 +14,11 @@ describe("formatDisplayDate", () => {
     expect(formatDisplayDate("2026-04-16 01:17:20")).toBe("2026/4/16");
   });
 
+  it("タイムゾーン付き日時文字列も日付部分を優先して整形する", () => {
+    expect(formatDisplayDate("2026-04-16 01:17:20+00:00")).toBe("2026/4/16");
+    expect(formatDisplayDate("2026-04-16T01:17:20.000Z")).toBe("2026/4/16");
+  });
+
   it("不正な値はプレースホルダーを返す", () => {
     expect(formatDisplayDate("invalid-date")).toBe("-");
     expect(formatDisplayDate("")).toBe("-");
